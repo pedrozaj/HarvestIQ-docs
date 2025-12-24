@@ -1,0 +1,31 @@
+# Sensitive files - NEVER commit these
+SENSITIVE-INFO.md
+SENSITIVE-*.md
+*.sensitive
+*.secret
+*.credentials
+
+# API Keys and tokens
+*.key
+*.pem
+*.p12
+.env
+.env.*
+!.env.example
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
