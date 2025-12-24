@@ -4,14 +4,16 @@
 
 ## Database
 
-- [ ] Create migration: `007_create_budget_categories.sql`
-- [ ] Create migration: `008_create_schedule_phases.sql`
-- [ ] Create migration: `009_create_schedule_milestones.sql`
-- [ ] Create migration: `010_create_schedule_tasks.sql`
-- [ ] Create migration: `011_create_task_dependencies.sql`
-- [ ] Create migration: `012_create_budget_items.sql`
-- [ ] Seed default budget categories
+- [ ] Create migration: `010_create_budget_categories.sql`
+- [ ] Create migration: `011_create_schedule_phases.sql`
+- [ ] Create migration: `012_create_schedule_milestones.sql`
+- [ ] Create migration: `013_create_schedule_tasks.sql`
+- [ ] Create migration: `014_create_task_dependencies.sql`
+- [ ] Create migration: `015_create_budget_items.sql`
+- [ ] Add default budget categories seeding to builder creation
 - [ ] Run migrations and verify
+
+> **Note:** Migrations 001-009 were created in Phases 1-2.
 
 ---
 
@@ -121,6 +123,31 @@
 - [ ] `useBudgetItems(projectId, filters)` - Budget items
 - [ ] `useBudgetSummary(projectId)` - Summary data
 - [ ] Mutation hooks for create/update/delete
+
+---
+
+## Constants Updates
+
+Add to `src/constants/index.ts`:
+
+```typescript
+ENTITY_TYPE: {
+  // existing...
+  PHASE: 'phase',
+  TASK: 'task',
+  MILESTONE: 'milestone',
+  BUDGET_ITEM: 'budget_item',
+  BUDGET_CATEGORY: 'budget_category',
+}
+
+ACTIVITY_ACTION: {
+  // existing...
+  COMPLETED: 'completed',
+  ACHIEVED: 'achieved',
+  DEPENDENCY_ADDED: 'dependency_added',
+  DEPENDENCY_REMOVED: 'dependency_removed',
+}
+```
 
 ---
 

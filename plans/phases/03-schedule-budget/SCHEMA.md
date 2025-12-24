@@ -7,13 +7,15 @@ Schedule and budget tables.
 ## Migration Order
 
 ```
-007_create_budget_categories.sql
-008_create_schedule_phases.sql
-009_create_schedule_milestones.sql
-010_create_schedule_tasks.sql
-011_create_task_dependencies.sql
-012_create_budget_items.sql
+010_create_budget_categories.sql
+011_create_schedule_phases.sql
+012_create_schedule_milestones.sql
+013_create_schedule_tasks.sql
+014_create_task_dependencies.sql
+015_create_budget_items.sql
 ```
+
+> **Note:** Migrations 001-009 were created in Phases 1-2.
 
 ---
 
@@ -58,9 +60,10 @@ CREATE TABLE schedule_phases (
   end_date DATE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-
-  CONSTRAINT fk_phases_project_same_builder CHECK (...)
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
+
+-- Builder ID consistency enforced in application layer
 
 CREATE INDEX idx_schedule_phases_builder_id ON schedule_phases(builder_id);
 CREATE INDEX idx_schedule_phases_project_id ON schedule_phases(project_id);
@@ -85,7 +88,8 @@ CREATE TABLE schedule_milestones (
   status VARCHAR(50) NOT NULL DEFAULT 'upcoming',
     -- values: upcoming, achieved, missed
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_schedule_milestones_project_id ON schedule_milestones(project_id);
@@ -118,7 +122,8 @@ CREATE TABLE schedule_tasks (
   estimated_hours DECIMAL(10,2),
   actual_hours DECIMAL(10,2),
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_schedule_tasks_project_id ON schedule_tasks(project_id);
@@ -169,7 +174,8 @@ CREATE TABLE budget_items (
   estimated_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   actual_amount DECIMAL(12,2) DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_budget_items_project_id ON budget_items(project_id);
@@ -193,10 +199,10 @@ SELECT
   u.name as assigned_to_name,
   array_agg(td.depends_on_task_id) FILTER (WHERE td.id IS NOT NULL) as dependencies
 FROM schedule_phases p
-LEFT JOIN schedule_tasks t ON t.phase_id = p.id
+LEFT JOIN schedule_tasks t ON t.phase_id = p.id AND t.deleted_at IS NULL
 LEFT JOIN users u ON t.assigned_to = u.id
 LEFT JOIN task_dependencies td ON td.task_id = t.id
-WHERE p.project_id = $1 AND p.builder_id = $2
+WHERE p.project_id = $1 AND p.builder_id = $2 AND p.deleted_at IS NULL
 GROUP BY p.id, t.id, u.name
 ORDER BY p.sort_order, t.planned_start_date;
 ```
@@ -209,8 +215,23 @@ SELECT
   COALESCE(SUM(bi.estimated_amount), 0) as estimated,
   COALESCE(SUM(bi.actual_amount), 0) as actual
 FROM budget_categories bc
-LEFT JOIN budget_items bi ON bi.category_id = bc.id AND bi.project_id = $1
+LEFT JOIN budget_items bi ON bi.category_id = bc.id AND bi.project_id = $1 AND bi.deleted_at IS NULL
 WHERE bc.builder_id = $2 AND bc.is_active = true
 GROUP BY bc.id
 ORDER BY bc.name;
 ```
+
+---
+
+## Default Budget Categories
+
+Seed these categories when a new builder is created:
+
+```
+Permits, Site Work, Foundation, Framing, Roofing, Electrical,
+Plumbing, HVAC, Insulation, Drywall, Flooring, Painting,
+Cabinets, Countertops, Appliances, Fixtures, Landscaping,
+Cleanup, Contingency
+```
+
+Implementation: Add to builder creation flow in `auth.controller.ts` or create a separate seeding function.

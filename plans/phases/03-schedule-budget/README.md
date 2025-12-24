@@ -12,7 +12,8 @@ Enable full schedule management with phases, tasks, milestones, and dependencies
 
 ## Dependencies
 
-- Phase 2: Core Models (complete)
+- Phase 1: Infrastructure (complete)
+- Phase 2: Core Data Models (complete) - migrations 001-009
 
 ---
 

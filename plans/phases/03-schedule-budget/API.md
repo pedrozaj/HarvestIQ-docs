@@ -4,6 +4,20 @@ Schedule and budget management endpoints.
 
 ---
 
+## Authorization
+
+| Resource | Read | Create/Update | Delete |
+|----------|------|---------------|--------|
+| Budget Categories | All | Admin | Admin |
+| Schedule Phases | All | Admin/Manager | Admin/Manager |
+| Schedule Tasks | All | Admin/Manager/Member | Admin/Manager |
+| Schedule Milestones | All | Admin/Manager | Admin/Manager |
+| Budget Items | All | Admin/Manager | Admin/Manager |
+
+> **Note:** All DELETE operations are soft deletes (set `deleted_at` timestamp).
+
+---
+
 ## Budget Categories
 
 ### GET /budget-categories
