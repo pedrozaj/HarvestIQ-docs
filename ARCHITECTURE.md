@@ -11,27 +11,41 @@
 **Features:**
 - Server-side rendering for SEO
 - Client-side interactivity for dashboard
-- File upload/download via backend API
-- Settings loaded from backend API
+- Cookie-based JWT authentication
+- React Hook Form with Zod validation
 
 **Directory Structure:**
 ```
 HarvestIQ/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx          # Landing page
-│   │   ├── layout.tsx        # Root layout
-│   │   ├── globals.css       # Global styles
-│   │   ├── dashboard/        # Dashboard page
-│   │   ├── documents/        # File management
-│   │   ├── projects/         # Project tracking (UI)
-│   │   ├── expenses/         # Expense management (UI)
-│   │   ├── contractors/      # Contractor management (UI)
-│   │   └── schedule/         # Scheduling (UI)
-│   └── components/
-│       ├── Navbar.tsx
-│       ├── DashboardLayout.tsx
-│       └── FeatureCard.tsx
+│   │   ├── page.tsx              # Landing page
+│   │   ├── layout.tsx            # Root layout
+│   │   ├── globals.css           # Global styles
+│   │   ├── (auth)/               # Auth pages (grouped layout)
+│   │   │   ├── layout.tsx        # Auth layout (centered card)
+│   │   │   ├── login/page.tsx
+│   │   │   ├── register/page.tsx
+│   │   │   ├── verify-email/page.tsx
+│   │   │   ├── forgot-password/page.tsx
+│   │   │   └── reset-password/page.tsx
+│   │   ├── dashboard/            # Dashboard page
+│   │   ├── documents/            # File management
+│   │   ├── projects/             # Project tracking
+│   │   ├── expenses/             # Expense management
+│   │   ├── contractors/          # Contractor management
+│   │   └── schedule/             # Scheduling
+│   ├── components/
+│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── Navbar.tsx
+│   │   └── DashboardLayout.tsx
+│   ├── hooks/
+│   │   └── useAuth.ts            # Auth context & hooks
+│   ├── lib/
+│   │   ├── api.ts                # API client
+│   │   └── constants.ts          # Error messages
+│   └── schemas/
+│       └── auth.schema.ts        # Zod validation schemas
 ├── public/
 ├── package.json
 └── tsconfig.json
@@ -43,76 +57,319 @@ HarvestIQ/
 
 **Hosting:** Railway (automatic deployments from GitHub)
 
-**Database:** PostgreSQL (Railway managed, persistent volume)
+**Database:** PostgreSQL (Railway managed)
 
 **Storage:** Cloudflare R2 via S3-compatible API
 
+**Email:** Resend (transactional emails)
+
 **Features:**
 - RESTful API endpoints
-- Settings management (CRUD)
-- File management (upload, download, delete via R2)
-- CORS enabled for frontend access
-- Auto-seeding database on startup
+- Multi-tenant architecture (builder isolation)
+- JWT authentication with refresh tokens
+- Rate limiting per endpoint
+- Helmet security headers
 
 **Directory Structure:**
 ```
 HarvestIQ-backend/
 ├── src/
-│   ├── index.ts              # Express server
-│   ├── db.ts                 # PostgreSQL database setup
-│   └── r2.ts                 # R2 storage client (S3 SDK)
-├── dist/                     # Compiled JavaScript
+│   ├── index.ts                  # Server entry point
+│   ├── app.ts                    # Express app setup
+│   ├── config/
+│   │   ├── database.ts           # PostgreSQL pool + transactions
+│   │   └── env.ts                # Environment validation (Zod)
+│   ├── constants/
+│   │   └── index.ts              # Enums, error codes
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── user.controller.ts
+│   │   ├── builder.controller.ts
+│   │   ├── organization.controller.ts
+│   │   ├── project.controller.ts
+│   │   ├── activity.controller.ts
+│   │   └── invitation.controller.ts
+│   ├── middleware/
+│   │   ├── auth.ts               # JWT verification
+│   │   ├── errorHandler.ts       # Global error handler
+│   │   ├── rateLimiter.ts        # Rate limiting
+│   │   └── validate.ts           # Zod validation
+│   ├── models/
+│   │   ├── user.model.ts
+│   │   ├── builder.model.ts
+│   │   ├── organization.model.ts
+│   │   ├── organizationMember.model.ts
+│   │   ├── refreshToken.model.ts
+│   │   ├── project.model.ts
+│   │   ├── activity.model.ts
+│   │   └── invitation.model.ts
+│   ├── routes/
+│   │   ├── index.ts              # Route aggregator
+│   │   ├── auth.routes.ts
+│   │   ├── user.routes.ts
+│   │   ├── builder.routes.ts
+│   │   ├── organization.routes.ts
+│   │   ├── project.routes.ts
+│   │   ├── activity.routes.ts
+│   │   └── invitation.routes.ts
+│   ├── schemas/
+│   │   ├── auth.schema.ts
+│   │   ├── user.schema.ts
+│   │   ├── builder.schema.ts
+│   │   ├── organization.schema.ts
+│   │   ├── project.schema.ts
+│   │   └── activity.schema.ts
+│   ├── services/
+│   │   └── email.service.ts      # Resend email sending
+│   ├── types/
+│   │   └── index.ts              # TypeScript interfaces
+│   ├── utils/
+│   │   ├── jwt.ts                # Token generation
+│   │   ├── crypto.ts             # Hashing utilities
+│   │   ├── dates.ts              # Date helpers
+│   │   └── response.ts           # HTTP response helpers
+│   ├── db.ts                     # Database query helpers
+│   └── r2.ts                     # R2 storage client
+├── migrations/
+│   ├── 001_create_builders.sql
+│   ├── 002_create_users.sql
+│   ├── 003_create_organizations.sql
+│   ├── 004_create_organization_members.sql
+│   ├── 005_create_refresh_tokens.sql
+│   ├── 006_create_projects.sql
+│   ├── 007_create_activity_log.sql
+│   ├── 008_create_invitations.sql
+│   └── 009_add_invitations_deleted_at.sql
 ├── package.json
 └── tsconfig.json
 ```
 
-## Data Flow
+## Multi-Tenant Architecture
 
-### 1. Page Load (Landing Page)
-```
-User Browser → Vercel → Next.js SSR → Railway API → PostgreSQL
-                ↓
-           Render page with site settings
-```
+HarvestIQ uses a multi-tenant architecture where each **Builder** (company) has isolated data.
 
-### 2. File Upload
 ```
-User Browser → Vercel (Documents Page) → Railway API → R2 Storage
-                                              ↓
-                                    Save metadata to PostgreSQL
-                                              ↓
-                                        Return file record
-```
-
-### 3. File Download
-```
-User Browser → Railway API → R2 Storage → Stream file to browser
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Multi-Tenant Hierarchy                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                          BUILDER                                 │   │
+│  │  (Tenant - Company Account)                                      │   │
+│  │  • Subscription management                                       │   │
+│  │  • Storage/AI token limits                                       │   │
+│  │  • Billing info                                                  │   │
+│  └──────────────────────────┬──────────────────────────────────────┘   │
+│                             │                                           │
+│              ┌──────────────┴──────────────┐                           │
+│              │                             │                           │
+│              ▼                             ▼                           │
+│  ┌───────────────────────┐   ┌───────────────────────┐                 │
+│  │        USERS          │   │    ORGANIZATIONS      │                 │
+│  │  (Individual accounts)│   │   (Business units)    │                 │
+│  │  • Authentication     │   │  • Project grouping   │                 │
+│  │  • Preferences        │   │  • Team separation    │                 │
+│  └───────────┬───────────┘   └───────────┬───────────┘                 │
+│              │                           │                             │
+│              └───────────┬───────────────┘                             │
+│                          │                                             │
+│                          ▼                                             │
+│              ┌───────────────────────┐                                 │
+│              │  ORGANIZATION_MEMBERS │                                 │
+│              │  (Role assignments)   │                                 │
+│              │  • admin              │                                 │
+│              │  • manager            │                                 │
+│              │  • member             │                                 │
+│              │  • viewer             │                                 │
+│              └───────────────────────┘                                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Database Schema
 
-### settings table
+### builders table
 | Column | Type | Description |
 |--------|------|-------------|
-| id | SERIAL | Primary key |
-| key | TEXT | Unique setting key |
-| value | TEXT | Setting value |
+| id | UUID | Primary key |
+| name | VARCHAR(255) | Company name |
+| subscription_status | VARCHAR(50) | trial, active, past_due, canceled |
+| subscription_plan | VARCHAR(50) | free, starter, professional, enterprise |
+| trial_ends_at | TIMESTAMPTZ | Trial expiration date |
+| billing_email | VARCHAR(255) | Billing contact email |
+| storage_used_bytes | BIGINT | Current storage usage |
+| storage_limit_bytes | BIGINT | Storage quota (default 5GB) |
+| ai_tokens_used_month | INTEGER | AI tokens used this month |
+| ai_tokens_limit_month | INTEGER | Monthly AI token limit |
+| settings | JSONB | Builder-specific settings |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| updated_at | TIMESTAMPTZ | Last update timestamp |
+| deleted_at | TIMESTAMPTZ | Soft delete timestamp |
+
+### users table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| email | VARCHAR(255) | Unique email address |
+| password_hash | VARCHAR(255) | Bcrypt hash |
+| name | VARCHAR(255) | Display name |
+| phone | VARCHAR(50) | Phone number |
+| timezone | VARCHAR(50) | User timezone |
+| notification_preferences | JSONB | Notification settings |
+| email_verified_at | TIMESTAMPTZ | Email verification date |
+| email_verification_token | VARCHAR(255) | Pending verification token |
+| email_verification_expires_at | TIMESTAMPTZ | Token expiration |
+| last_login_at | TIMESTAMPTZ | Last successful login |
+| failed_login_attempts | INTEGER | Failed login counter |
+| locked_until | TIMESTAMPTZ | Account lock expiration |
+| password_reset_token | VARCHAR(255) | Password reset token |
+| password_reset_expires_at | TIMESTAMPTZ | Reset token expiration |
+| is_active | BOOLEAN | Account active status |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| updated_at | TIMESTAMPTZ | Last update timestamp |
+| deleted_at | TIMESTAMPTZ | Soft delete timestamp |
+
+### organizations table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| name | VARCHAR(255) | Organization name |
+| is_default | BOOLEAN | Default org for builder |
+| settings | JSONB | Org-specific settings |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| updated_at | TIMESTAMPTZ | Last update timestamp |
+| deleted_at | TIMESTAMPTZ | Soft delete timestamp |
+
+### organization_members table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| organization_id | UUID | FK to organizations |
+| user_id | UUID | FK to users |
+| role | VARCHAR(50) | admin, manager, member, viewer |
+| invited_at | TIMESTAMPTZ | Invitation timestamp |
+| joined_at | TIMESTAMPTZ | Join timestamp |
+| is_active | BOOLEAN | Membership active status |
 | created_at | TIMESTAMPTZ | Creation timestamp |
 | updated_at | TIMESTAMPTZ | Last update timestamp |
 
-### files table
+### refresh_tokens table
 | Column | Type | Description |
 |--------|------|-------------|
-| id | SERIAL | Primary key |
-| filename | TEXT | Storage filename |
-| original_name | TEXT | Original filename |
-| mime_type | TEXT | File MIME type |
-| size | INTEGER | File size in bytes |
-| storage_key | TEXT | R2 storage key |
-| project_id | INTEGER | Project association (nullable) |
-| uploaded_by | INTEGER | User association (nullable) |
-| created_at | TIMESTAMPTZ | Upload timestamp |
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| user_id | UUID | FK to users |
+| token_hash | VARCHAR(255) | SHA-256 hash of token |
+| device_info | VARCHAR(500) | User agent string |
+| expires_at | TIMESTAMPTZ | Token expiration |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| revoked_at | TIMESTAMPTZ | Revocation timestamp |
+| revoked_by | UUID | FK to user who revoked |
+
+### projects table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| organization_id | UUID | FK to organizations |
+| name | VARCHAR(255) | Project name |
+| address | VARCHAR(500) | Project address |
+| unit_type | VARCHAR(50) | single_family, townhomes, condos, apartments |
+| units | INTEGER | Number of units |
+| lot_size_acres | DECIMAL(10,2) | Lot size in acres |
+| status | VARCHAR(50) | planning, active, on_hold, completed |
+| start_date | DATE | Planned start date |
+| end_date | DATE | Planned end date |
+| description | TEXT | Project description |
+| created_at | TIMESTAMPTZ | Creation timestamp |
 | updated_at | TIMESTAMPTZ | Last update timestamp |
+| deleted_at | TIMESTAMPTZ | Soft delete timestamp |
+
+### activity_log table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| user_id | UUID | FK to users |
+| project_id | UUID | FK to projects (optional) |
+| entity_type | VARCHAR(50) | project, task, budget_item, etc. |
+| entity_id | UUID | ID of the affected entity |
+| action | VARCHAR(50) | created, updated, deleted, status_changed |
+| changes | JSONB | Field changes (from/to values) |
+| metadata | JSONB | Additional context |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+
+### invitations table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| builder_id | UUID | FK to builders |
+| organization_id | UUID | FK to organizations |
+| email | VARCHAR(255) | Invited email address |
+| role | VARCHAR(50) | admin, manager, member, viewer |
+| token_hash | VARCHAR(255) | SHA-256 hash of invitation token |
+| invited_by | UUID | FK to user who sent invite |
+| message | TEXT | Optional invitation message |
+| expires_at | TIMESTAMPTZ | Token expiration (7 days) |
+| accepted_at | TIMESTAMPTZ | When invitation was accepted |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+| deleted_at | TIMESTAMPTZ | Soft delete timestamp |
+
+## Data Flow
+
+### 1. Registration Flow
+```
+Browser → POST /api/auth/register
+                    ↓
+            Create Builder (tenant)
+                    ↓
+            Create User (owner)
+                    ↓
+            Create Default Organization
+                    ↓
+            Add User as Admin Member
+                    ↓
+            Send Verification Email (Resend)
+                    ↓
+            Return success message
+```
+
+### 2. Authentication Flow
+```
+Browser → POST /api/auth/login
+                    ↓
+            Validate credentials
+                    ↓
+            Check email verified
+                    ↓
+            Generate access token (15 min)
+                    ↓
+            Generate refresh token (7 days)
+                    ↓
+            Store refresh token hash in DB
+                    ↓
+            Set HTTP-only cookies
+                    ↓
+            Return user data + access token
+```
+
+### 3. API Request Flow
+```
+Browser → Request with access_token cookie
+                    ↓
+            JWT verification middleware
+                    ↓
+            Extract user_id and builder_id
+                    ↓
+            Attach to req.user
+                    ↓
+            Controller handles request
+                    ↓
+            All queries filtered by builder_id
+```
 
 ## Infrastructure
 
@@ -124,15 +381,40 @@ User Browser → Railway API → R2 Storage → Stream file to browser
 │  ┌─────────────────┐     ┌─────────────────┐     ┌───────────┐ │
 │  │    Frontend     │────▶│   Backend API   │────▶│ PostgreSQL│ │
 │  │    (Vercel)     │     │   (Railway)     │     │ (Railway) │ │
-│  │   Next.js 15    │     │  Express + TS   │     │           │ │
+│  │   Next.js 15    │     │  Express 5 + TS │     │           │ │
 │  └─────────────────┘     └────────┬────────┘     └───────────┘ │
 │                                   │                             │
-│                                   ▼                             │
-│                          ┌─────────────────┐                    │
-│                          │   Cloudflare    │                    │
-│                          │   R2 Storage    │                    │
-│                          └─────────────────┘                    │
+│                          ┌────────┴────────┐                    │
+│                          │                 │                    │
+│                          ▼                 ▼                    │
+│                 ┌─────────────────┐ ┌─────────────────┐         │
+│                 │   Cloudflare    │ │     Resend      │         │
+│                 │   R2 Storage    │ │  (Email API)    │         │
+│                 └─────────────────┘ └─────────────────┘         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Security
+
+### Authentication
+- JWT access tokens (15 min expiry)
+- HTTP-only refresh tokens (7 day expiry)
+- Refresh token rotation on use
+- Secure cookie settings in production
+
+### Password Security
+- Bcrypt hashing (10 rounds)
+- Minimum 8 characters
+- Account lockout after 5 failed attempts (15 min)
+
+### Rate Limiting
+- Login: 10 requests/minute per IP
+- Registration: 5 requests/minute per IP
+- Password reset: 3 requests/minute per email
+- General API: 100 requests/minute per user
+
+### Headers
+- Helmet.js for security headers
+- CORS restricted to frontend domain
+- No sensitive data in error responses

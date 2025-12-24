@@ -6,9 +6,9 @@ Step-by-step tasks for core models implementation.
 
 ## Database
 
-- [ ] Create migration: `005_create_projects.sql`
-- [ ] Create migration: `006_create_activity_log.sql`
-- [ ] Create migration: `007_create_invitations.sql` (optional)
+- [ ] Create migration: `006_create_projects.sql`
+- [ ] Create migration: `007_create_activity_log.sql`
+- [ ] Create migration: `008_create_invitations.sql`
 - [ ] Run migrations
 - [ ] Verify table constraints and indexes
 

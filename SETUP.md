@@ -20,20 +20,6 @@ git clone git@github.com:pedrozaj/HarvestIQ.git
 git clone git@github.com:pedrozaj/HarvestIQ-backend.git
 ```
 
-## Frontend Setup
-
-```bash
-cd HarvestIQ
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Open http://localhost:3000
-```
-
 ## Backend Setup
 
 ```bash
@@ -43,27 +29,59 @@ cd HarvestIQ-backend
 npm install
 
 # Create .env file for local development
-# Get credentials from SENSITIVE-INFO.md (never commit this file)
 cat > .env << 'EOF'
-PORT=3001
+# Server
 NODE_ENV=development
+PORT=3001
+
+# Database
 DATABASE_URL=<see SENSITIVE-INFO.md>
+
+# JWT
+JWT_SECRET=harvestiq-dev-secret-key-min-32-characters-long
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
+# Frontend URL (for CORS and email links)
+FRONTEND_URL=http://localhost:3000
+
+# Email (Resend) - optional for local dev
+RESEND_API_KEY=<see SENSITIVE-INFO.md>
+EMAIL_FROM=HarvestIQ <noreply@harvestiq.thex1.com>
+
+# R2 Storage - optional for local dev
 R2_ACCOUNT_ID=<see SENSITIVE-INFO.md>
 R2_ACCESS_KEY_ID=<see SENSITIVE-INFO.md>
 R2_SECRET_ACCESS_KEY=<see SENSITIVE-INFO.md>
 R2_BUCKET_NAME=harvestiq-files
 EOF
 
-# Build TypeScript
-npm run build
+# Run database migrations
+npm run migrate
 
-# Run server
-npm start
-
-# Or run in development mode (with hot reload)
+# Run in development mode (with hot reload)
 npm run dev
 
 # Server runs on http://localhost:3001
+```
+
+## Frontend Setup
+
+```bash
+cd HarvestIQ
+
+# Install dependencies
+npm install
+
+# Create .env.local for local development
+cat > .env.local << 'EOF'
+NEXT_PUBLIC_API_URL=http://localhost:3001
+EOF
+
+# Run development server
+npm run dev
+
+# Open http://localhost:3000
 ```
 
 ## CLI Tools Setup
@@ -99,55 +117,102 @@ psql "$DATABASE_URL" -c "SELECT 1"
 ### Test Backend API
 ```bash
 # Health check
+curl http://localhost:3001/health
+
+# API info
 curl http://localhost:3001
+```
 
-# Get settings
-curl http://localhost:3001/api/settings
+### Test Authentication Flow
+```bash
+# Register a new account
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "company_name": "Test Company",
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone": "555-0123",
+    "password": "TestPass123"
+  }'
 
-# List files
-curl http://localhost:3001/api/files
+# Check backend console for verification email (logged when Resend not configured)
+
+# Login (after verifying email)
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "TestPass123"
+  }'
+```
+
+### Test Protected Endpoints
+```bash
+# Get current user (requires auth cookie or token)
+curl http://localhost:3001/api/users/me \
+  -H "Authorization: Bearer <access_token>"
+
+# Get builder info
+curl http://localhost:3001/api/builder \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ### Test Production API
 ```bash
 # Health check
+curl https://harvestiq-backend-production.up.railway.app/health
+
+# API info
 curl https://harvestiq-backend-production.up.railway.app
-
-# Get settings
-curl https://harvestiq-backend-production.up.railway.app/api/settings
-```
-
-### Test File Upload
-```bash
-# Upload a file
-curl -X POST http://localhost:3001/api/files \
-  -F "file=@/path/to/test.pdf"
 ```
 
 ## Project Structure
 
 ```
 /Users/joey/Projects/X1LLC/
-├── HarvestIQ/              # Frontend (Next.js 15)
+├── HarvestIQ/                  # Frontend (Next.js 15)
 │   ├── src/
-│   │   ├── app/            # App router pages
-│   │   └── components/     # React components
-│   ├── public/
+│   │   ├── app/                # App router pages
+│   │   │   ├── (auth)/         # Auth pages (login, register, etc.)
+│   │   │   ├── dashboard/      # Dashboard
+│   │   │   └── ...             # Feature pages
+│   │   ├── components/         # React components
+│   │   ├── hooks/              # Custom hooks (useAuth, etc.)
+│   │   ├── lib/                # API client, utilities
+│   │   └── schemas/            # Zod validation schemas
 │   └── package.json
-├── HarvestIQ-backend/      # Backend (Express 5)
+├── HarvestIQ-backend/          # Backend (Express 5)
 │   ├── src/
-│   │   ├── index.ts        # Express server
-│   │   ├── db.ts           # PostgreSQL client
-│   │   └── r2.ts           # R2 storage client
-│   ├── dist/               # Compiled JS
+│   │   ├── config/             # Database, environment
+│   │   ├── controllers/        # Route handlers
+│   │   ├── middleware/         # Auth, validation, rate limiting
+│   │   ├── models/             # Database models
+│   │   ├── routes/             # API routes
+│   │   ├── schemas/            # Zod schemas
+│   │   ├── services/           # Email, etc.
+│   │   └── utils/              # JWT, crypto helpers
+│   ├── migrations/             # SQL migrations
 │   └── package.json
-└── HarvestIQ-docs/         # Documentation
-    ├── README.md           # Project overview
-    ├── ARCHITECTURE.md     # System design
-    ├── API.md              # API reference
-    ├── SETUP.md            # This file
-    ├── DEPLOYMENT.md       # Deploy guide
-    └── SENSITIVE-INFO.md   # Credentials
+└── HarvestIQ-docs/             # Documentation
+    ├── README.md               # Project overview
+    ├── ARCHITECTURE.md         # System design
+    ├── API.md                  # API reference
+    ├── SETUP.md                # This file
+    ├── DEPLOYMENT.md           # Deploy guide
+    └── SENSITIVE-INFO.md       # Credentials
+```
+
+## Database Migrations
+
+```bash
+cd HarvestIQ-backend
+
+# Run all pending migrations
+npm run migrate
+
+# View migration files
+ls migrations/
 ```
 
 ## Common Issues
@@ -170,6 +235,17 @@ psql "$DATABASE_URL" -c "\dt"
 # - VPN blocking connection
 # - Firewall rules
 # - Invalid credentials
+```
+
+### Email Not Sending
+- If `RESEND_API_KEY` is not set, emails are logged to console
+- Check backend console for verification links during local development
+- Ensure domain is verified in Resend dashboard for production
+
+### JWT Errors
+```bash
+# Ensure JWT_SECRET is at least 32 characters
+# Check that JWT_ACCESS_EXPIRY and JWT_REFRESH_EXPIRY are valid duration strings
 ```
 
 ### Git SSH Issues
@@ -200,4 +276,3 @@ railway login
 railway unlink
 railway link -p 1e5eb883-85fd-4867-8603-050dbb3fd6f1
 ```
-

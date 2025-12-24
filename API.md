@@ -6,7 +6,19 @@
 
 ---
 
-### Health Check
+## Health Check
+
+```
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-12-23T21:00:00.000Z"
+}
+```
 
 ```
 GET /
@@ -15,216 +27,1285 @@ GET /
 **Response:**
 ```json
 {
-  "message": "HarvestIQ API is running!",
+  "name": "HarvestIQ API",
   "version": "1.0.0",
-  "database": "PostgreSQL",
-  "storage": "Cloudflare R2",
-  "endpoints": {
-    "health": "GET /",
-    "settings": "GET /api/settings",
-    "files": "GET /api/files"
-  }
+  "environment": "production"
 }
 ```
 
 ---
 
-### Settings
+## Authentication
 
-#### Get All Settings
+All auth endpoints are prefixed with `/api/auth`.
+
+### Register
+
+Create a new builder account with initial user and organization.
 
 ```
-GET /api/settings
+POST /api/auth/register
+Content-Type: application/json
 ```
 
-**Response:**
+**Rate Limit:** 5 requests/minute per IP
+
+**Request Body:**
 ```json
 {
-  "site_title": "Build Smarter with HarvestIQ",
-  "site_subtitle": "Built for builders",
-  "site_description": "The all-in-one construction management platform..."
+  "company_name": "Acme Builders",
+  "name": "John Smith",
+  "email": "john@acmebuilders.com",
+  "phone": "(555) 123-4567",
+  "password": "SecurePass123"
 }
 ```
 
-#### Get Setting by Key
-
-```
-GET /api/settings/:key
-```
-
-**Response:**
+**Response (201 Created):**
 ```json
 {
-  "key": "site_title",
-  "value": "Build Smarter with HarvestIQ"
+  "data": {
+    "message": "Verification email sent"
+  }
 }
 ```
 
-#### Update Setting
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1005 | 409 | Email already registered |
+| AUTH_1006 | 400 | Password does not meet requirements |
+| VAL_3001 | 400 | Validation failed |
+
+---
+
+### Verify Email
+
+Verify email address with token from verification email.
 
 ```
-PUT /api/settings/:key
+POST /api/auth/verify-email
 Content-Type: application/json
 ```
 
 **Request Body:**
 ```json
 {
-  "value": "New Value"
+  "token": "abc123..."
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
-  "key": "site_title",
-  "value": "New Value",
-  "message": "Setting updated successfully"
+  "data": {
+    "message": "Email verified successfully"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1003 | 400 | Invalid or expired verification token |
+
+---
+
+### Resend Verification
+
+Resend verification email.
+
+```
+POST /api/auth/resend-verification
+Content-Type: application/json
+```
+
+**Rate Limit:** 5 requests/minute per IP
+
+**Request Body:**
+```json
+{
+  "email": "john@acmebuilders.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "If account exists and is unverified, verification email sent"
+  }
 }
 ```
 
 ---
 
-### Files
+### Login
 
-#### List All Files
-
-```
-GET /api/files
-```
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "filename": "1703358000000-document.pdf",
-    "original_name": "document.pdf",
-    "mime_type": "application/pdf",
-    "size": 1234567,
-    "storage_key": "1703358000000-document.pdf",
-    "project_id": null,
-    "uploaded_by": null,
-    "created_at": "2025-12-23T21:00:00.000Z",
-    "updated_at": "2025-12-23T21:00:00.000Z"
-  }
-]
-```
-
-#### Get File Metadata
+Authenticate user and receive tokens.
 
 ```
-GET /api/files/:id
+POST /api/auth/login
+Content-Type: application/json
 ```
 
-**Response:**
+**Rate Limit:** 10 requests/minute per IP
+
+**Request Body:**
 ```json
 {
-  "id": 1,
-  "filename": "1703358000000-document.pdf",
-  "original_name": "document.pdf",
-  "mime_type": "application/pdf",
-  "size": 1234567,
-  "storage_key": "1703358000000-document.pdf",
-  "created_at": "2025-12-23T21:00:00.000Z"
+  "email": "john@acmebuilders.com",
+  "password": "SecurePass123"
 }
 ```
 
-#### View File in Browser
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "john@acmebuilders.com",
+      "name": "John Smith",
+      "builderId": "uuid"
+    },
+    "accessToken": "eyJhbG..."
+  }
+}
+```
+
+**Cookies Set:**
+- `access_token` - JWT access token (15 min expiry)
+- `refresh_token` - JWT refresh token (7 day expiry)
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1001 | 401 | Invalid email or password |
+| AUTH_1007 | 403 | Email not verified |
+| AUTH_1008 | 423 | Account locked. Try again in X minutes |
+
+---
+
+### Logout
+
+Invalidate current session and revoke refresh token.
 
 ```
-GET /api/files/:id/view
+POST /api/auth/logout
 ```
 
-**Response:** File content with `Content-Disposition: inline` header, allowing PDFs and images to display directly in the browser.
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Logged out successfully"
+  }
+}
+```
 
-#### Download File
+---
+
+### Refresh Token
+
+Get new access token using refresh token.
 
 ```
-GET /api/files/:id/download
+POST /api/auth/refresh
 ```
 
-**Response:** File content with `Content-Disposition: attachment` header, forcing browser to download.
+**Rate Limit:** 30 requests/minute per user
 
-#### Upload File
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "accessToken": "eyJhbG..."
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1004 | 401 | Refresh token expired or invalid |
+| AUTH_1009 | 403 | Subscription inactive |
+
+---
+
+### Forgot Password
+
+Initiate password reset flow.
 
 ```
-POST /api/files
-Content-Type: multipart/form-data
+POST /api/auth/forgot-password
+Content-Type: application/json
+```
+
+**Rate Limit:** 3 requests/minute per email
+
+**Request Body:**
+```json
+{
+  "email": "john@acmebuilders.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "If an account exists, a reset email has been sent"
+  }
+}
+```
+
+---
+
+### Reset Password
+
+Complete password reset with token.
+
+```
+POST /api/auth/reset-password
+Content-Type: application/json
 ```
 
 **Request Body:**
-- `file` - The file to upload (required)
-
-**Response:**
 ```json
 {
-  "id": 1,
-  "filename": "1703358000000-document.pdf",
-  "original_name": "document.pdf",
-  "mime_type": "application/pdf",
-  "size": 1234567,
-  "storage_key": "1703358000000-document.pdf",
-  "created_at": "2025-12-23T21:00:00.000Z"
+  "token": "abc123...",
+  "password": "NewSecurePass123"
 }
 ```
 
-**Example (JavaScript):**
-```javascript
-const formData = new FormData();
-formData.append('file', fileInput.files[0]);
-
-const response = await fetch('https://harvestiq-backend-production.up.railway.app/api/files', {
-  method: 'POST',
-  body: formData,
-});
-
-const result = await response.json();
-console.log('Uploaded:', result.original_name);
-```
-
-#### Delete File
-
-```
-DELETE /api/files/:id
-```
-
-**Response:**
+**Response (200 OK):**
 ```json
 {
-  "message": "File deleted successfully"
+  "data": {
+    "message": "Password reset successfully"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1003 | 400 | Invalid or expired reset token |
+| AUTH_1006 | 400 | Password does not meet requirements |
+
+---
+
+## User Endpoints
+
+All user endpoints require authentication and are prefixed with `/api/users`.
+
+### Get Current User
+
+```
+GET /api/users/me
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "john@acmebuilders.com",
+    "name": "John Smith",
+    "phone": "(555) 123-4567",
+    "timezone": "America/New_York",
+    "emailVerifiedAt": "2025-12-23T21:00:00.000Z",
+    "lastLoginAt": "2025-12-23T21:00:00.000Z",
+    "builder": {
+      "id": "uuid",
+      "name": "Acme Builders",
+      "subscriptionPlan": "trial",
+      "subscriptionStatus": "trial"
+    },
+    "organizations": [
+      {
+        "id": "uuid",
+        "name": "Acme Builders",
+        "role": "admin"
+      }
+    ],
+    "createdAt": "2025-12-23T21:00:00.000Z"
+  }
 }
 ```
 
 ---
 
-## Error Responses
+### Update Current User
 
-All endpoints return errors in this format:
+```
+PUT /api/users/me
+Authorization: Bearer <token>
+Content-Type: application/json
+```
 
+**Request Body:**
 ```json
 {
-  "error": "Error message description"
+  "name": "John Smith Jr.",
+  "phone": "(555) 987-6543",
+  "timezone": "America/Los_Angeles"
 }
 ```
 
-**Status Codes:**
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `404` - Not Found
-- `500` - Internal Server Error
-- `503` - Service Unavailable (storage not configured)
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "john@acmebuilders.com",
+    "name": "John Smith Jr.",
+    "phone": "(555) 987-6543",
+    "timezone": "America/Los_Angeles",
+    "updatedAt": "2025-12-23T21:00:00.000Z"
+  }
+}
+```
+
+---
+
+### Change Password
+
+```
+PUT /api/users/me/password
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "currentPassword": "OldSecurePass123",
+  "newPassword": "NewSecurePass456"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Password changed successfully"
+  }
+}
+```
+
+**Side Effects:** Revokes all other sessions.
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTH_1001 | 400 | Current password is incorrect |
+| AUTH_1006 | 400 | New password does not meet requirements |
+
+---
+
+### Update Notification Preferences
+
+```
+PUT /api/users/me/notification-preferences
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "channels": {
+    "email": true,
+    "sms": false,
+    "in_app": true
+  },
+  "types": {
+    "reminder": ["email", "in_app"],
+    "task_assigned": ["in_app"],
+    "task_due": ["email", "in_app"],
+    "milestone_approaching": ["email", "in_app"],
+    "invoice_due": ["email"],
+    "system": ["in_app"]
+  }
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "channels": { ... },
+    "types": { ... }
+  }
+}
+```
+
+---
+
+### List Active Sessions
+
+```
+GET /api/users/me/sessions
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "deviceInfo": "Mozilla/5.0...",
+      "createdAt": "2025-12-23T21:00:00.000Z",
+      "isCurrent": true
+    }
+  ]
+}
+```
+
+---
+
+### Revoke Session
+
+```
+DELETE /api/users/me/sessions/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Session revoked"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| RES_4001 | 404 | Session not found |
+| AUTHZ_2002 | 403 | Cannot revoke current session |
+
+---
+
+### Revoke All Other Sessions
+
+```
+DELETE /api/users/me/sessions
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "revokedCount": 3
+  }
+}
+```
+
+---
+
+## Builder Endpoints
+
+All builder endpoints require authentication and are prefixed with `/api/builder`.
+
+### Get Builder
+
+```
+GET /api/builder
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Acme Builders",
+    "subscriptionStatus": "trial",
+    "subscriptionPlan": "free",
+    "trialEndsAt": "2025-01-06T21:00:00.000Z",
+    "storageUsedBytes": 0,
+    "storageLimitBytes": 5368709120,
+    "aiTokensUsedMonth": 0,
+    "aiTokensLimitMonth": 100000,
+    "createdAt": "2025-12-23T21:00:00.000Z"
+  }
+}
+```
+
+---
+
+### Update Builder
+
+```
+PUT /api/builder
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin role
+
+**Request Body:**
+```json
+{
+  "name": "Acme Builders Inc.",
+  "billingEmail": "billing@acmebuilders.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Acme Builders Inc.",
+    ...
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| AUTHZ_2003 | 403 | Admin role required |
+
+---
+
+## Error Response Format
+
+All errors return:
+
+```json
+{
+  "error": {
+    "code": "AUTH_1001",
+    "message": "Human-readable message",
+    "details": {}
+  }
+}
+```
+
+**Error Code Prefixes:**
+- `AUTH_1xxx` - Authentication errors
+- `AUTHZ_2xxx` - Authorization errors
+- `VAL_3xxx` - Validation errors
+- `RES_4xxx` - Resource errors
+- `SYS_9xxx` - System errors
+
+---
+
+## Authentication
+
+Requests are authenticated using JWT tokens:
+
+**Cookie-based (preferred for web):**
+```
+Cookie: access_token=<jwt_token>
+```
+
+**Header-based:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+---
+
+## Rate Limiting
+
+| Endpoint | Limit | Key |
+|----------|-------|-----|
+| POST /api/auth/login | 10/minute | IP |
+| POST /api/auth/register | 5/minute | IP |
+| POST /api/auth/forgot-password | 3/minute | email |
+| POST /api/auth/refresh | 30/minute | user |
+| All other endpoints | 100/minute | user |
+
+Rate limit headers:
+- `X-RateLimit-Limit`
+- `X-RateLimit-Remaining`
+- `X-RateLimit-Reset`
 
 ---
 
 ## CORS
 
-The API has CORS enabled:
+The API restricts CORS to the frontend domain in production:
 
 ```
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
-Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Origin: https://harvest-iq-rosy.vercel.app
+Access-Control-Allow-Credentials: true
 ```
 
+---
+
+## Organization Endpoints
+
+All organization endpoints require authentication and are prefixed with `/api/organizations`.
+
+### List Organizations
+
+```
+GET /api/organizations
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Acme Builders",
+      "isDefault": true,
+      "settings": {},
+      "createdAt": "2025-12-23T21:00:00.000Z",
+      "updatedAt": "2025-12-23T21:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Get Organization
+
+```
+GET /api/organizations/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Acme Builders",
+    "isDefault": true,
+    "settings": {},
+    "memberCount": 5,
+    "projectCount": 12,
+    "createdAt": "2025-12-23T21:00:00.000Z",
+    "updatedAt": "2025-12-23T21:00:00.000Z"
+  }
+}
+```
+
+---
+
+### Create Organization
+
+```
+POST /api/organizations
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "New Division"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "New Division",
+    "isDefault": false,
+    "settings": {},
+    "createdAt": "2025-12-23T21:00:00.000Z",
+    "updatedAt": "2025-12-23T21:00:00.000Z"
+  }
+}
+```
+
+---
+
+### Update Organization
+
+```
+PATCH /api/organizations/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin role in the organization
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "settings": {}
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Updated Name",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Organization
+
+```
+DELETE /api/organizations/:id
+Authorization: Bearer <token>
+```
+
+**Requires:** Admin role in the organization
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Organization deleted"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| RES_4003 | 400 | Cannot delete default organization |
+| AUTHZ_2002 | 403 | Only admin can delete organization |
+
+---
+
+### List Organization Members
+
+```
+GET /api/organizations/:id/members
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "userId": "uuid",
+      "email": "user@example.com",
+      "name": "John Smith",
+      "role": "admin",
+      "joinedAt": "2025-12-23T21:00:00.000Z",
+      "isActive": true
+    }
+  ]
+}
+```
+
+---
+
+### Update Member Role
+
+```
+PATCH /api/organizations/:id/members/:userId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin role in the organization
+
+**Request Body:**
+```json
+{
+  "role": "manager"
+}
+```
+
+**Role Values:** `admin`, `manager`, `member`, `viewer`
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Role updated"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| BIZ_5001 | 400 | Cannot demote last admin |
+| AUTHZ_2002 | 403 | Only admin can change member roles |
+
+---
+
+### Remove Member
+
+```
+DELETE /api/organizations/:id/members/:userId
+Authorization: Bearer <token>
+```
+
+**Requires:** Admin role in the organization
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Member removed"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| BIZ_5002 | 400 | Cannot remove yourself from organization |
+| AUTHZ_2002 | 403 | Only admin can remove members |
+
+---
+
+### List Pending Invitations
+
+```
+GET /api/organizations/:organizationId/invitations
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "email": "new@example.com",
+      "role": "member",
+      "invitedBy": "uuid",
+      "message": "Join our team!",
+      "expiresAt": "2025-12-30T21:00:00.000Z",
+      "createdAt": "2025-12-23T21:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Create Invitation
+
+```
+POST /api/organizations/:organizationId/invitations
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin role in the organization
+
+**Request Body:**
+```json
+{
+  "organizationId": "uuid",
+  "email": "new@example.com",
+  "role": "member",
+  "message": "Join our team!"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "new@example.com",
+    "role": "member",
+    "invitedBy": "uuid",
+    "message": "Join our team!",
+    "expiresAt": "2025-12-30T21:00:00.000Z",
+    "createdAt": "2025-12-23T21:00:00.000Z"
+  }
+}
+```
+
+**Side Effects:** Sends invitation email to the recipient.
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| RES_4002 | 409 | User is already a member of this organization |
+| RES_4002 | 409 | Invitation already pending for this email |
+| AUTHZ_2002 | 403 | Only admin can invite members |
+
+---
+
+## Invitation Endpoints
+
+Invitation management endpoints are prefixed with `/api/invitations`.
+
+### Get Invitation Info
+
+Get invitation details by token (public endpoint).
+
+```
+GET /api/invitations/:token
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "new@example.com",
+    "role": "member",
+    "organizationName": "Acme Builders",
+    "inviterName": "John Smith",
+    "expiresAt": "2025-12-30T21:00:00.000Z"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| BIZ_5003 | 400 | Invalid or expired invitation |
+
+---
+
+### Accept Invitation
+
+```
+POST /api/invitations/:token/accept
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Invitation accepted",
+    "organizationId": "uuid",
+    "organizationName": "Acme Builders"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| BIZ_5003 | 400 | Invalid or expired invitation |
+| AUTHZ_2001 | 403 | Invitation was sent to a different email |
+| BIZ_5004 | 400 | Invitation is for a different account |
+
+---
+
+### Resend Invitation
+
+```
+POST /api/invitations/:id/resend
+Authorization: Bearer <token>
+```
+
+**Requires:** Admin role in the organization
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "new@example.com",
+    "role": "member",
+    ...
+  }
+}
+```
+
+**Side Effects:** Sends new invitation email and resets expiration.
+
+---
+
+### Cancel Invitation
+
+```
+DELETE /api/invitations/:id
+Authorization: Bearer <token>
+```
+
+**Requires:** Admin role in the organization
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Invitation cancelled"
+  }
+}
+```
+
+---
+
+## Project Endpoints
+
+All project endpoints require authentication and are prefixed with `/api/projects`.
+
+### List Projects
+
+```
+GET /api/projects
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| status | string | Filter by status: `planning`, `active`, `on_hold`, `completed` |
+| organizationId | uuid | Filter by organization |
+| unitType | string | Filter by unit type: `single_family`, `townhomes`, `condos`, `apartments` |
+| search | string | Search in name and address |
+| sortBy | string | Sort field: `created_at`, `name`, `units`, `status`, `start_date` |
+| sortOrder | string | Sort direction: `asc`, `desc` |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "projects": [
+      {
+        "id": "uuid",
+        "organizationId": "uuid",
+        "name": "Riverside Apartments",
+        "address": "123 Main St",
+        "unitType": "apartments",
+        "units": 24,
+        "lotSizeAcres": 2.5,
+        "status": "active",
+        "startDate": "2025-01-15",
+        "endDate": "2025-12-31",
+        "description": "24-unit apartment complex",
+        "createdAt": "2025-12-23T21:00:00.000Z",
+        "updatedAt": "2025-12-23T21:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "limit": 20,
+    "offset": 0
+  }
+}
+```
+
+---
+
+### Create Project
+
+```
+POST /api/projects
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin or Manager role in the organization
+
+**Request Body:**
+```json
+{
+  "organizationId": "uuid",
+  "name": "Riverside Apartments",
+  "address": "123 Main St",
+  "unitType": "apartments",
+  "units": 24,
+  "lotSizeAcres": 2.5,
+  "startDate": "2025-01-15",
+  "endDate": "2025-12-31",
+  "description": "24-unit apartment complex"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "organizationId": "uuid",
+    "name": "Riverside Apartments",
+    ...
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| RES_4001 | 404 | Organization not found |
+| AUTHZ_2001 | 403 | Not a member of this organization |
+| AUTHZ_2002 | 403 | Only admin or manager can create projects |
+
+---
+
+### Get Project
+
+```
+GET /api/projects/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "organizationId": "uuid",
+    "name": "Riverside Apartments",
+    ...
+  }
+}
+```
+
+---
+
+### Update Project
+
+```
+PATCH /api/projects/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin or Manager role in the organization
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "status": "on_hold",
+  ...
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Updated Name",
+    "status": "on_hold",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Project
+
+```
+DELETE /api/projects/:id
+Authorization: Bearer <token>
+```
+
+**Requires:** Admin role in the organization
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Project deleted"
+  }
+}
+```
+
+---
+
+### Get Project Activity
+
+```
+GET /api/projects/:id/activity
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| limit | number | Results per page (default: 50, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "activities": [
+      {
+        "id": "uuid",
+        "userId": "uuid",
+        "userName": "John Smith",
+        "entityType": "project",
+        "entityId": "uuid",
+        "action": "created",
+        "changes": null,
+        "metadata": { "name": "Riverside Apartments" },
+        "createdAt": "2025-12-23T21:00:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+---
+
+## Activity Endpoints
+
+Activity log endpoints are prefixed with `/api/activity`.
+
+### List Activity
+
+```
+GET /api/activity
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| projectId | uuid | Filter by project |
+| entityType | string | Filter by entity: `project`, `task`, `budget_item`, `document`, `payment`, `invoice`, `organization`, `user` |
+| limit | number | Results per page (default: 50, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "activities": [
+      {
+        "id": "uuid",
+        "userId": "uuid",
+        "userName": "John Smith",
+        "projectId": "uuid",
+        "projectName": "Riverside Apartments",
+        "entityType": "project",
+        "entityId": "uuid",
+        "action": "status_changed",
+        "changes": {
+          "status": { "from": "planning", "to": "active" }
+        },
+        "metadata": null,
+        "createdAt": "2025-12-23T21:00:00.000Z"
+      }
+    ],
+    "total": 25,
+    "limit": 50,
+    "offset": 0
+  }
+}
+```
+
+**Action Values:** `created`, `updated`, `deleted`, `status_changed`, `assigned`, `completed`, `uploaded`, `payment_recorded`

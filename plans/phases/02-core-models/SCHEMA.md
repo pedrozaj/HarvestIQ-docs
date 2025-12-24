@@ -8,8 +8,9 @@ Tables for project management and activity tracking.
 
 Run after Phase 1 migrations:
 
-5. `005_create_projects.sql`
-6. `006_create_activity_log.sql`
+6. `006_create_projects.sql`
+7. `007_create_activity_log.sql`
+8. `008_create_invitations.sql`
 
 ---
 
@@ -36,13 +37,9 @@ CREATE TABLE projects (
   description TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  deleted_at TIMESTAMP WITH TIME ZONE,
+  deleted_at TIMESTAMP WITH TIME ZONE
 
-  -- Ensure organization belongs to same builder
-  CONSTRAINT fk_projects_org_same_builder
-    CHECK (EXISTS (
-      SELECT 1 FROM organizations WHERE id = organization_id AND builder_id = projects.builder_id
-    ))
+  -- Note: Organization must belong to same builder - validated at application level
 );
 
 CREATE INDEX idx_projects_builder_id ON projects(builder_id);
