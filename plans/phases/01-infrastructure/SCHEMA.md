@@ -96,6 +96,8 @@ CREATE TABLE users (
     }
   }',
   email_verified_at TIMESTAMP WITH TIME ZONE,
+  email_verification_token VARCHAR(255),
+  email_verification_expires_at TIMESTAMP WITH TIME ZONE,
   last_login_at TIMESTAMP WITH TIME ZONE,
   failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMP WITH TIME ZONE,
@@ -110,6 +112,7 @@ CREATE TABLE users (
 CREATE INDEX idx_users_builder_id ON users(builder_id);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_is_active ON users(is_active);
+CREATE INDEX idx_users_email_verification_token ON users(email_verification_token);
 CREATE INDEX idx_users_password_reset_token ON users(password_reset_token);
 CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 ```
@@ -127,6 +130,8 @@ CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 | timezone | VARCHAR(50) | Yes | America/New_York | User timezone |
 | notification_preferences | JSONB | Yes | {...} | Notification settings |
 | email_verified_at | TIMESTAMP | Yes | - | When email was verified |
+| email_verification_token | VARCHAR(255) | Yes | - | Verification token (hashed) |
+| email_verification_expires_at | TIMESTAMP | Yes | - | Verification token expiry |
 | last_login_at | TIMESTAMP | Yes | - | Last login time |
 | failed_login_attempts | INTEGER | No | 0 | Failed login counter |
 | locked_until | TIMESTAMP | Yes | - | Account lockout expiry |
@@ -296,6 +301,7 @@ AND deleted_at IS NULL;
 |-------|---------|
 | `idx_users_email` | Fast email lookup for login |
 | `idx_users_builder_id` | Filter users by tenant |
+| `idx_users_email_verification_token` | Fast token lookup for verification |
 | `idx_users_password_reset_token` | Fast token lookup for reset |
 | `idx_organizations_builder_id` | Filter orgs by tenant |
 | `idx_org_members_*` | Fast membership lookups |

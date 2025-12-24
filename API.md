@@ -1224,6 +1224,116 @@ Authorization: Bearer <token>
 
 ---
 
+### Get Project Summary
+
+Get aggregated project statistics including budget, schedule, and milestones.
+
+```
+GET /api/projects/:id/summary
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Riverside Apartments",
+    "status": "active",
+    "units": 24,
+    "budget": {
+      "totalEstimated": 500000,
+      "totalActual": 125000,
+      "variance": 375000,
+      "variancePercent": 75
+    },
+    "schedule": {
+      "totalTasks": 50,
+      "completedTasks": 12,
+      "overdueTasks": 2,
+      "progressPercent": 24
+    },
+    "milestones": {
+      "total": 8,
+      "achieved": 2,
+      "upcoming": 6,
+      "nextMilestone": {
+        "name": "Foundation Complete",
+        "targetDate": "2025-02-15"
+      }
+    },
+    "payments": {
+      "totalPaid": 0,
+      "outstandingInvoices": 0,
+      "outstandingAmount": 0
+    },
+    "costPerUnit": 5208.33,
+    "daysRemaining": 180
+  }
+}
+```
+
+---
+
+### Compare Projects
+
+Compare multiple projects side by side.
+
+```
+GET /api/projects/compare?ids=uuid1,uuid2,uuid3
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| ids | string | Comma-separated list of 2-5 project UUIDs |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "projects": [
+      {
+        "id": "uuid",
+        "name": "Riverside Apartments",
+        "status": "active",
+        "units": 24,
+        "unitType": "apartments",
+        "budget": {
+          "totalEstimated": 500000,
+          "totalActual": 125000,
+          "variance": 375000,
+          "variancePercent": 75
+        },
+        "schedule": {
+          "totalTasks": 50,
+          "completedTasks": 12,
+          "overdueTasks": 2,
+          "progressPercent": 24
+        },
+        "milestones": {
+          "total": 8,
+          "achieved": 2,
+          "upcoming": 6
+        },
+        "costPerUnit": 5208.33,
+        "daysRemaining": 180
+      }
+    ],
+    "count": 2
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| VAL_3001 | 400 | Project IDs required (comma-separated) |
+| VAL_3001 | 400 | Provide 2-5 project IDs to compare |
+
+---
+
 ### Get Project Activity
 
 ```
@@ -1309,3 +1419,657 @@ Authorization: Bearer <token>
 ```
 
 **Action Values:** `created`, `updated`, `deleted`, `status_changed`, `assigned`, `completed`, `uploaded`, `payment_recorded`
+
+---
+
+## Schedule Phase Endpoints
+
+Schedule phases are nested under projects: `/api/projects/:id/phases`.
+
+### List Phases
+
+```
+GET /api/projects/:id/phases
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "name": "Foundation",
+      "description": "Foundation work",
+      "status": "not_started",
+      "sortOrder": 1,
+      "startDate": "2025-01-15",
+      "endDate": "2025-02-15",
+      "createdAt": "2025-12-23T21:00:00.000Z",
+      "updatedAt": "2025-12-23T21:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Create Phase
+
+```
+POST /api/projects/:id/phases
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Foundation",
+  "description": "Foundation work",
+  "startDate": "2025-01-15",
+  "endDate": "2025-02-15"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "name": "Foundation",
+    ...
+  }
+}
+```
+
+---
+
+### Update Phase
+
+```
+PUT /api/projects/:id/phases/:phaseId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "status": "in_progress",
+  "startDate": "2025-01-15",
+  "endDate": "2025-02-28"
+}
+```
+
+**Status Values:** `not_started`, `in_progress`, `completed`
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Updated Name",
+    "status": "in_progress",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Phase
+
+```
+DELETE /api/projects/:id/phases/:phaseId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Phase deleted"
+  }
+}
+```
+
+---
+
+### Reorder Phases
+
+```
+PUT /api/projects/:id/phases/reorder
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "phases": [
+    { "id": "uuid-1", "sortOrder": 0 },
+    { "id": "uuid-2", "sortOrder": 1 },
+    { "id": "uuid-3", "sortOrder": 2 }
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Phases reordered"
+  }
+}
+```
+
+---
+
+## Schedule Task Endpoints
+
+Schedule tasks are nested under projects: `/api/projects/:id/tasks`.
+
+### List Tasks
+
+```
+GET /api/projects/:id/tasks
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| phaseId | uuid | Filter by phase |
+| status | string | Filter by status: `not_started`, `in_progress`, `completed`, `blocked` |
+| assignedTo | uuid | Filter by assigned user |
+| priority | string | Filter by priority: `low`, `medium`, `high`, `urgent` |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "tasks": [
+      {
+        "id": "uuid",
+        "projectId": "uuid",
+        "phaseId": "uuid",
+        "name": "Pour footings",
+        "description": "Pour concrete footings",
+        "status": "not_started",
+        "priority": "high",
+        "assignedTo": "uuid",
+        "assigneeName": "John Smith",
+        "plannedStartDate": "2025-01-20",
+        "plannedEndDate": "2025-01-22",
+        "actualStartDate": null,
+        "actualEndDate": null,
+        "estimatedHours": 16,
+        "actualHours": null,
+        "createdAt": "2025-12-23T21:00:00.000Z",
+        "updatedAt": "2025-12-23T21:00:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+---
+
+### Create Task
+
+```
+POST /api/projects/:id/tasks
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "phaseId": "uuid",
+  "name": "Pour footings",
+  "description": "Pour concrete footings",
+  "assignedTo": "uuid",
+  "priority": "high",
+  "plannedStartDate": "2025-01-20",
+  "plannedEndDate": "2025-01-22",
+  "estimatedHours": 16
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "phaseId": "uuid",
+    "name": "Pour footings",
+    ...
+  }
+}
+```
+
+---
+
+### Get Task
+
+```
+GET /api/projects/:id/tasks/:taskId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "phaseId": "uuid",
+    "name": "Pour footings",
+    "description": "Pour concrete footings",
+    "status": "not_started",
+    "priority": "high",
+    "dependencies": [
+      {
+        "id": "uuid",
+        "dependsOnTaskId": "uuid",
+        "dependsOnTaskName": "Excavate foundation"
+      }
+    ],
+    ...
+  }
+}
+```
+
+---
+
+### Update Task
+
+```
+PUT /api/projects/:id/tasks/:taskId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "status": "in_progress",
+  "actualStartDate": "2025-01-20",
+  "actualHours": 8
+}
+```
+
+**Status Values:** `not_started`, `in_progress`, `completed`, `blocked`
+**Priority Values:** `low`, `medium`, `high`, `urgent`
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "in_progress",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Task
+
+```
+DELETE /api/projects/:id/tasks/:taskId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Task deleted"
+  }
+}
+```
+
+---
+
+### Add Task Dependency
+
+```
+POST /api/projects/:id/tasks/:taskId/dependencies
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "dependsOnTaskId": "uuid"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "taskId": "uuid",
+    "dependsOnTaskId": "uuid"
+  }
+}
+```
+
+**Errors:**
+| Code | Status | Message |
+|------|--------|---------|
+| RES_4001 | 404 | Task not found |
+| RES_4002 | 409 | Dependency already exists |
+| BIZ_5005 | 400 | Cannot create circular dependency |
+
+---
+
+### Remove Task Dependency
+
+```
+DELETE /api/projects/:id/tasks/:taskId/dependencies/:depId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Dependency removed"
+  }
+}
+```
+
+---
+
+## Schedule Milestone Endpoints
+
+Schedule milestones are nested under projects: `/api/projects/:id/milestones`.
+
+### List Milestones
+
+```
+GET /api/projects/:id/milestones
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "phaseId": "uuid",
+      "name": "Foundation Complete",
+      "description": "All foundation work completed",
+      "targetDate": "2025-02-15",
+      "actualDate": null,
+      "status": "upcoming",
+      "createdAt": "2025-12-23T21:00:00.000Z",
+      "updatedAt": "2025-12-23T21:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Create Milestone
+
+```
+POST /api/projects/:id/milestones
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Foundation Complete",
+  "phaseId": "uuid",
+  "targetDate": "2025-02-15",
+  "description": "All foundation work completed"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "name": "Foundation Complete",
+    ...
+  }
+}
+```
+
+---
+
+### Update Milestone
+
+```
+PUT /api/projects/:id/milestones/:milestoneId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "status": "achieved",
+  "actualDate": "2025-02-14"
+}
+```
+
+**Status Values:** `upcoming`, `achieved`, `missed`
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "achieved",
+    "actualDate": "2025-02-14",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Milestone
+
+```
+DELETE /api/projects/:id/milestones/:milestoneId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Milestone deleted"
+  }
+}
+```
+
+---
+
+## Budget Item Endpoints
+
+Budget items are nested under projects: `/api/projects/:id/budget`.
+
+### List Budget Items
+
+```
+GET /api/projects/:id/budget
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| categoryId | uuid | Filter by budget category |
+| phaseId | uuid | Filter by phase |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "projectId": "uuid",
+        "categoryId": "uuid",
+        "categoryName": "Foundation",
+        "phaseId": "uuid",
+        "phaseName": "Foundation Phase",
+        "name": "Concrete",
+        "description": "Concrete for footings",
+        "estimatedAmount": 15000,
+        "actualAmount": 14500,
+        "createdAt": "2025-12-23T21:00:00.000Z",
+        "updatedAt": "2025-12-23T21:00:00.000Z"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+---
+
+### Get Budget Summary
+
+```
+GET /api/projects/:id/budget/summary
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "totalEstimated": 500000,
+    "totalActual": 125000,
+    "remainingBudget": 375000,
+    "percentUsed": 25,
+    "byCategory": [
+      {
+        "categoryId": "uuid",
+        "categoryName": "Foundation",
+        "estimated": 50000,
+        "actual": 45000,
+        "variance": -5000
+      }
+    ],
+    "byPhase": [
+      {
+        "phaseId": "uuid",
+        "phaseName": "Foundation Phase",
+        "estimated": 75000,
+        "actual": 70000
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Create Budget Item
+
+```
+POST /api/projects/:id/budget
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "categoryId": "uuid",
+  "phaseId": "uuid",
+  "name": "Concrete",
+  "description": "Concrete for footings",
+  "estimatedAmount": 15000,
+  "actualAmount": 0
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "categoryId": "uuid",
+    "name": "Concrete",
+    ...
+  }
+}
+```
+
+---
+
+### Update Budget Item
+
+```
+PUT /api/projects/:id/budget/:itemId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "actualAmount": 14500,
+  "description": "Concrete for footings - final cost"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "actualAmount": 14500,
+    ...
+  }
+}
+```
+
+---
+
+### Delete Budget Item
+
+```
+DELETE /api/projects/:id/budget/:itemId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Budget item deleted"
+  }
+}
+```

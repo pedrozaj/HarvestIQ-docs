@@ -4,17 +4,28 @@
 
 ## Database
 
-- [ ] Create migration: `013_create_documents.sql`
-- [ ] Create migration: `014_create_invoices.sql`
-- [ ] Create migration: `015_create_payments.sql`
+- [ ] Create migration: `017_create_documents.sql`
+- [ ] Create migration: `018_create_invoices.sql`
+- [ ] Create migration: `019_create_payments.sql`
 - [ ] Run migrations and verify
+
+---
+
+## Backend Constants
+
+Add to `src/constants/index.ts`:
+
+- [ ] `DOCUMENT_TYPE` - contract, permit, specification, drawing, inspection_report, change_order, receipt, warranty, insurance, other
+- [ ] `INVOICE_STATUS` - draft, sent, viewed, partially_paid, paid, overdue, cancelled
+- [ ] `PAYMENT_STATUS` - pending, completed, failed, refunded, partial
+- [ ] `PAYMENT_METHOD` - cash, check, credit_card, bank_transfer, ach, other
 
 ---
 
 ## R2 Storage Setup
 
-- [ ] Configure R2 bucket credentials
-- [ ] Create `src/services/storage.service.ts`
+- [x] Configure R2 bucket credentials (already in `src/r2.ts`)
+- [ ] Create `src/services/storage.service.ts` (wrapper with signed URLs)
 - [ ] Implement `getSignedUploadUrl(key, mimeType)`
 - [ ] Implement `getSignedDownloadUrl(key)`
 - [ ] Implement `deleteObject(key)`

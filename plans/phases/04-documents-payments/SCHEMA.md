@@ -7,10 +7,12 @@ Document, invoice, and payment tables.
 ## Migration Order
 
 ```
-013_create_documents.sql
-014_create_invoices.sql
-015_create_payments.sql
+017_create_documents.sql
+018_create_invoices.sql
+019_create_payments.sql
 ```
+
+> **Note**: Migrations 013-016 are used by Phase 3 (Schedule & Budget).
 
 ---
 
