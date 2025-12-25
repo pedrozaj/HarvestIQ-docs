@@ -1141,6 +1141,12 @@ Content-Type: application/json
 }
 ```
 
+**Side Effects:**
+- Automatically populates default schedule template with phases, tasks, and milestones
+- Automatically populates default budget template with categories and line items
+- Schedule dates are calculated from project start date with realistic durations
+- Budget amounts scale based on unit count and unit type
+
 **Errors:**
 | Code | Status | Message |
 |------|--------|---------|
@@ -1368,6 +1374,47 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+---
+
+### Apply Templates
+
+Re-apply default schedule and/or budget templates to an existing project. Useful if templates were not applied during creation or to reset to defaults.
+
+```
+POST /api/projects/:id/templates
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Requires:** Admin or Manager role in the organization
+
+**Request Body:**
+```json
+{
+  "schedule": true,
+  "budget": true
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Templates applied: schedule, budget",
+    "project": {
+      "id": "uuid",
+      "name": "Riverside Apartments",
+      ...
+    }
+  }
+}
+```
+
+**Notes:**
+- Schedule template uses the project's start date (or today if not set) to calculate task dates
+- Budget template scales costs based on unit type and unit count
+- Existing schedule phases/tasks and budget items are NOT deleted; templates add new items
 
 ---
 

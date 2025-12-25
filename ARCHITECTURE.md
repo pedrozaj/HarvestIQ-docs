@@ -127,7 +127,9 @@ HarvestIQ-backend/
 │   │   ├── jwt.ts                # Token generation
 │   │   ├── crypto.ts             # Hashing utilities
 │   │   ├── dates.ts              # Date helpers
-│   │   └── response.ts           # HTTP response helpers
+│   │   ├── response.ts           # HTTP response helpers
+│   │   ├── scheduleTemplates.ts  # Default schedule generation
+│   │   └── budgetTemplates.ts    # Default budget generation
 │   ├── db.ts                     # Database query helpers
 │   └── r2.ts                     # R2 storage client
 ├── migrations/
@@ -370,6 +372,38 @@ Browser → Request with access_token cookie
                     ↓
             All queries filtered by builder_id
 ```
+
+## Project Templates
+
+When a new project is created, the system automatically populates default schedule and budget templates. These templates can also be manually re-applied via the API.
+
+### Schedule Templates
+
+Located in `src/utils/scheduleTemplates.ts`:
+
+- **12 construction phases**: Pre-Construction, Site Work, Foundation, Framing, Rough-In (MEP), Exterior, Insulation & Drywall, Interior Finishes, Flooring, Fixtures & Appliances, Final, Landscaping
+- **50+ tasks** distributed across phases
+- **8 milestones** at key project checkpoints
+- Dates calculated from project start date using business days (skips weekends)
+- Duration multipliers by unit type:
+  - Single Family: 1.0x
+  - Townhomes: 1.2x
+  - Condos: 1.5x
+  - Apartments: 1.8x
+- Parallel phase scheduling to minimize overall timeline
+
+### Budget Templates
+
+Located in `src/utils/budgetTemplates.ts`:
+
+- **30 budget categories**: Land, Permits, Site Work, Foundation, Framing, Roofing, etc.
+- **100+ line items** with per-unit cost estimates
+- Amounts scale by unit count
+- Cost multipliers by unit type:
+  - Single Family: 1.0x (baseline)
+  - Townhomes: 0.85x (shared walls/infrastructure)
+  - Condos: 0.75x (more shared infrastructure)
+  - Apartments: 0.70x (economies of scale)
 
 ## Infrastructure
 
