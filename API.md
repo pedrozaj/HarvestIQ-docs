@@ -2073,3 +2073,480 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+---
+
+## AI Integration
+
+All AI endpoints are prefixed with `/api/ai` and require authentication.
+
+### List Conversations
+
+```
+GET /api/ai/conversations
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `projectId` (optional): Filter by project
+- `limit` (optional): Number of results (default: 20, max: 50)
+- `offset` (optional): Pagination offset
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "projectName": "Smith Residence",
+      "title": "Budget question",
+      "createdAt": "2025-01-15T10:00:00Z",
+      "updatedAt": "2025-01-15T10:05:00Z"
+    }
+  ],
+  "total": 10
+}
+```
+
+### Create Conversation
+
+```
+POST /api/ai/conversations
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "projectId": "uuid",
+  "title": "Budget Analysis"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "title": "Budget Analysis",
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T10:00:00Z"
+  }
+}
+```
+
+### Get Conversation
+
+```
+GET /api/ai/conversations/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "projectName": "Smith Residence",
+    "title": "Budget question",
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T10:05:00Z",
+    "messages": [
+      {
+        "id": "uuid",
+        "role": "user",
+        "content": "How much did we spend on plumbing?",
+        "queryType": "spending",
+        "sources": null,
+        "tokensUsed": null,
+        "createdAt": "2025-01-15T10:00:00Z"
+      },
+      {
+        "id": "uuid",
+        "role": "assistant",
+        "content": "Based on your records, you've spent $15,250 on plumbing...",
+        "queryType": "spending",
+        "sources": [{"type": "database", "name": "payment_summary"}],
+        "tokensUsed": 450,
+        "createdAt": "2025-01-15T10:00:05Z"
+      }
+    ]
+  }
+}
+```
+
+### Delete Conversation
+
+```
+DELETE /api/ai/conversations/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Conversation deleted"
+  }
+}
+```
+
+### Send Message
+
+```
+POST /api/ai/conversations/:id/messages
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "content": "How much did we spend on plumbing last month?"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": {
+      "id": "uuid",
+      "role": "assistant",
+      "content": "Based on your payment records...",
+      "queryType": "spending",
+      "sources": [
+        {"type": "database", "name": "payment_summary"}
+      ],
+      "tokensUsed": 450,
+      "createdAt": "2025-01-15T10:05:00Z"
+    },
+    "metadata": {
+      "intent": "spending",
+      "confidence": 0.95,
+      "tokensUsed": 800,
+      "executionTimeMs": 2500,
+      "queryCount": 2
+    }
+  }
+}
+```
+
+**Error (429 Rate Limited):**
+```json
+{
+  "error": {
+    "code": "SYS_9003",
+    "message": "Monthly AI usage limit reached"
+  }
+}
+```
+
+### Submit Feedback
+
+```
+POST /api/ai/feedback
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "messageId": "uuid",
+  "rating": 5,
+  "feedbackText": "Very helpful response"
+}
+```
+
+**Notes:**
+- `rating`: 1 (thumbs down) or 5 (thumbs up)
+- `feedbackText`: Optional text feedback
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "message": "Feedback submitted"
+  }
+}
+```
+
+### List Insights
+
+```
+GET /api/ai/insights
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `projectId` (optional): Filter by project
+- `type` (optional): cost_pattern, schedule_risk, efficiency, anomaly, recommendation
+- `includeDismissed` (optional): Include dismissed insights (default: false)
+- `limit` (optional): Number of results (default: 20, max: 50)
+- `offset` (optional): Pagination offset
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "projectName": "Smith Residence",
+      "type": "cost_pattern",
+      "title": "Project is 15% over budget",
+      "description": "Spending has exceeded the budget by 15%...",
+      "data": {"variance": 15, "budget": 100000, "spent": 115000},
+      "severity": "warning",
+      "isDismissed": false,
+      "createdAt": "2025-01-15T06:00:00Z"
+    }
+  ],
+  "total": 5
+}
+```
+
+### Dismiss Insight
+
+```
+POST /api/ai/insights/:id/dismiss
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Insight dismissed"
+  }
+}
+```
+
+### Get Suggestions
+
+```
+GET /api/ai/suggestions
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `projectId` (optional): Get context-aware suggestions for a project
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    "What tasks are overdue?",
+    "What's our budget variance?",
+    "Show me recent payments",
+    "Compare spending by category"
+  ]
+}
+```
+
+### Get Usage
+
+```
+GET /api/ai/usage
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "tokensUsed": 45000,
+    "tokensLimit": 100000,
+    "tokensRemaining": 55000,
+    "usagePercentage": 45,
+    "resetAt": "2025-02-01T00:00:00Z"
+  }
+}
+```
+
+---
+
+## Reminder Endpoints
+
+All reminder endpoints require authentication and are prefixed with `/api/reminders`.
+
+### List Reminders
+
+```
+GET /api/reminders
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| projectId | uuid | Filter by project |
+| upcoming | boolean | Only future reminders (remind_at >= NOW()) |
+| dismissed | boolean | Filter by dismissed status |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Pay contractor",
+      "description": "Final payment for foundation work",
+      "remindAt": "2025-01-20T09:00:00Z",
+      "recurrence": "none",
+      "isDismissed": false,
+      "relatedEntity": {
+        "type": "project",
+        "id": "uuid",
+        "name": "Smith Residence"
+      },
+      "createdAt": "2025-01-15T10:00:00Z",
+      "updatedAt": "2025-01-15T10:00:00Z"
+    }
+  ],
+  "total": 5
+}
+```
+
+---
+
+### Create Reminder
+
+```
+POST /api/reminders
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Pay contractor",
+  "description": "Final payment for foundation work",
+  "remindAt": "2025-01-20T09:00:00Z",
+  "recurrence": "none",
+  "projectId": "uuid"
+}
+```
+
+**Recurrence Values:** `none`, `daily`, `weekly`, `biweekly`, `monthly`, `quarterly`, `yearly`
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "title": "Pay contractor",
+    "description": "Final payment for foundation work",
+    "remindAt": "2025-01-20T09:00:00Z",
+    "recurrence": "none",
+    "isDismissed": false,
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+### Get Reminder
+
+```
+GET /api/reminders/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "title": "Pay contractor",
+    "description": "Final payment for foundation work",
+    "remindAt": "2025-01-20T09:00:00Z",
+    "recurrence": "none",
+    "isDismissed": false
+  }
+}
+```
+
+---
+
+### Update Reminder
+
+```
+PUT /api/reminders/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Updated title",
+  "remindAt": "2025-01-25T09:00:00Z",
+  "recurrence": "weekly"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "title": "Updated title",
+    "remindAt": "2025-01-25T09:00:00Z",
+    "recurrence": "weekly"
+  }
+}
+```
+
+---
+
+### Delete Reminder
+
+```
+DELETE /api/reminders/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Reminder deleted"
+  }
+}
+```
+
+---
+
+### Dismiss Reminder
+
+Mark a reminder as dismissed (completed/acknowledged).
+
+```
+POST /api/reminders/:id/dismiss
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Reminder dismissed"
+  }
+}
+```
+
+**Notes:**
+- Dismissed reminders are excluded by default when listing reminders
+- Use `dismissed=true` query parameter to include dismissed reminders
+- For recurring reminders, dismissing advances to the next occurrence

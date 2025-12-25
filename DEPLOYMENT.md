@@ -89,6 +89,11 @@ railway variables set KEY=value
 # - R2_ACCESS_KEY_ID
 # - R2_SECRET_ACCESS_KEY
 # - R2_BUCKET_NAME
+# - ANTHROPIC_API_KEY (for AI assistant - Claude)
+# - OPENAI_API_KEY (for embeddings)
+# - RESEND_API_KEY (for transactional emails)
+# - JWT_SECRET (for authentication)
+# - FRONTEND_URL (for CORS)
 ```
 
 #### Deployment

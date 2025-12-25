@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-25 00:14:49 UTC
+-- Generated: 2025-12-25 03:30:15 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ALkAvJ76AeiUsD0UlAgtcAcELL5mONDH0iAGcGz9RAsCMumRkQFdML82Ug0wY1I
+\restrict Nvz7t6Fd3fEhNSno37yhR2cqZSuWwTJrz9GW6HgsVMKZyoXKigrNQQP4CZ298lW
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -354,6 +354,93 @@ CREATE TABLE public.activity_log (
 
 
 --
+-- Name: ai_conversations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_conversations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    project_id uuid,
+    title character varying(255),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+
+--
+-- Name: ai_feedback; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_feedback (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    message_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    rating integer,
+    feedback_text text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: ai_insights; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_insights (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    project_id uuid,
+    insight_type character varying(50) NOT NULL,
+    title character varying(255) NOT NULL,
+    description text NOT NULL,
+    data jsonb,
+    severity character varying(20) DEFAULT 'info'::character varying NOT NULL,
+    is_dismissed boolean DEFAULT false NOT NULL,
+    dismissed_by uuid,
+    dismissed_at timestamp with time zone,
+    expires_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: ai_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_messages (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    conversation_id uuid NOT NULL,
+    role character varying(20) NOT NULL,
+    content text NOT NULL,
+    query_type character varying(50),
+    query_params jsonb,
+    sources jsonb,
+    tokens_used integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: ai_patterns; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_patterns (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    pattern_type character varying(50) NOT NULL,
+    category_id uuid,
+    pattern_data jsonb NOT NULL,
+    confidence numeric(3,2),
+    last_calculated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: alert_thresholds; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -427,7 +514,23 @@ CREATE TABLE public.builders (
     settings jsonb DEFAULT '{}'::jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    ai_tokens_limit integer DEFAULT 100000 NOT NULL
+);
+
+
+--
+-- Name: document_embeddings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.document_embeddings (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    document_id uuid NOT NULL,
+    chunk_index integer NOT NULL,
+    chunk_text text NOT NULL,
+    embedding jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -974,6 +1077,46 @@ ALTER TABLE ONLY public.activity_log
 
 
 --
+-- Name: ai_conversations ai_conversations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_conversations
+    ADD CONSTRAINT ai_conversations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_feedback ai_feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_insights ai_insights_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights
+    ADD CONSTRAINT ai_insights_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_messages ai_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_messages
+    ADD CONSTRAINT ai_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_patterns ai_patterns_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_patterns
+    ADD CONSTRAINT ai_patterns_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: alert_thresholds alert_thresholds_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1003,6 +1146,14 @@ ALTER TABLE ONLY public.budget_items
 
 ALTER TABLE ONLY public.builders
     ADD CONSTRAINT builders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: document_embeddings document_embeddings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_embeddings
+    ADD CONSTRAINT document_embeddings_pkey PRIMARY KEY (id);
 
 
 --
@@ -1315,6 +1466,83 @@ CREATE INDEX idx_activity_log_user_id ON public.activity_log USING btree (user_i
 
 
 --
+-- Name: idx_ai_conversations_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_conversations_builder_id ON public.ai_conversations USING btree (builder_id);
+
+
+--
+-- Name: idx_ai_conversations_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_conversations_project_id ON public.ai_conversations USING btree (project_id);
+
+
+--
+-- Name: idx_ai_conversations_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_conversations_user_id ON public.ai_conversations USING btree (user_id);
+
+
+--
+-- Name: idx_ai_feedback_message_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_feedback_message_id ON public.ai_feedback USING btree (message_id);
+
+
+--
+-- Name: idx_ai_insights_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_builder_id ON public.ai_insights USING btree (builder_id);
+
+
+--
+-- Name: idx_ai_insights_is_dismissed; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_is_dismissed ON public.ai_insights USING btree (is_dismissed);
+
+
+--
+-- Name: idx_ai_insights_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_insights_project_id ON public.ai_insights USING btree (project_id);
+
+
+--
+-- Name: idx_ai_messages_conversation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_messages_conversation_id ON public.ai_messages USING btree (conversation_id);
+
+
+--
+-- Name: idx_ai_messages_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_messages_created_at ON public.ai_messages USING btree (created_at);
+
+
+--
+-- Name: idx_ai_patterns_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_patterns_builder_id ON public.ai_patterns USING btree (builder_id);
+
+
+--
+-- Name: idx_ai_patterns_pattern_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ai_patterns_pattern_type ON public.ai_patterns USING btree (pattern_type);
+
+
+--
 -- Name: idx_alert_thresholds_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1375,6 +1603,13 @@ CREATE INDEX idx_builders_deleted_at ON public.builders USING btree (deleted_at)
 --
 
 CREATE INDEX idx_builders_subscription_status ON public.builders USING btree (subscription_status);
+
+
+--
+-- Name: idx_document_embeddings_document_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_embeddings_document_id ON public.document_embeddings USING btree (document_id);
 
 
 --
@@ -1988,6 +2223,110 @@ ALTER TABLE ONLY public.activity_log
 
 
 --
+-- Name: ai_conversations ai_conversations_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_conversations
+    ADD CONSTRAINT ai_conversations_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: ai_conversations ai_conversations_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_conversations
+    ADD CONSTRAINT ai_conversations_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: ai_conversations ai_conversations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_conversations
+    ADD CONSTRAINT ai_conversations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: ai_feedback ai_feedback_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: ai_feedback ai_feedback_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.ai_messages(id);
+
+
+--
+-- Name: ai_feedback ai_feedback_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: ai_insights ai_insights_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights
+    ADD CONSTRAINT ai_insights_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: ai_insights ai_insights_dismissed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights
+    ADD CONSTRAINT ai_insights_dismissed_by_fkey FOREIGN KEY (dismissed_by) REFERENCES public.users(id);
+
+
+--
+-- Name: ai_insights ai_insights_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_insights
+    ADD CONSTRAINT ai_insights_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: ai_messages ai_messages_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_messages
+    ADD CONSTRAINT ai_messages_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: ai_messages ai_messages_conversation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_messages
+    ADD CONSTRAINT ai_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.ai_conversations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ai_patterns ai_patterns_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_patterns
+    ADD CONSTRAINT ai_patterns_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: ai_patterns ai_patterns_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_patterns
+    ADD CONSTRAINT ai_patterns_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.budget_categories(id);
+
+
+--
 -- Name: alert_thresholds alert_thresholds_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2049,6 +2388,22 @@ ALTER TABLE ONLY public.budget_items
 
 ALTER TABLE ONLY public.budget_items
     ADD CONSTRAINT budget_items_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
+-- Name: document_embeddings document_embeddings_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_embeddings
+    ADD CONSTRAINT document_embeddings_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: document_embeddings document_embeddings_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_embeddings
+    ADD CONSTRAINT document_embeddings_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
 
 
 --
@@ -2463,5 +2818,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ALkAvJ76AeiUsD0UlAgtcAcELL5mONDH0iAGcGz9RAsCMumRkQFdML82Ug0wY1I
+\unrestrict Nvz7t6Fd3fEhNSno37yhR2cqZSuWwTJrz9GW6HgsVMKZyoXKigrNQQP4CZ298lW
 
