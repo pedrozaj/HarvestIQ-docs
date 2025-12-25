@@ -10,9 +10,15 @@ Build the dashboard with multi-project overview, implement global search, and co
 
 ---
 
-## Dependencies
+## Prerequisites
 
-- Phases 3, 4, 5 complete (needs data from all)
+| Requirement | Status |
+|-------------|--------|
+| Phase 1-4: Core Infrastructure | Complete |
+| Phase 5: Tasks & Notifications | Required |
+| Migrations 001-025 | Required |
+| Task items data available | Required |
+| Reminders data available | Required |
 
 ---
 
@@ -22,12 +28,44 @@ Build the dashboard with multi-project overview, implement global search, and co
 2. Global search across all entities
 3. Settings pages (profile, security, notifications)
 4. Schedule and budget reports
+5. Cross-project spending analysis
 
 ---
 
 ## Tables Introduced
 
 None - uses existing tables with aggregation queries.
+
+---
+
+## Work Streams
+
+Phase 6 is organized into parallel work streams:
+
+| Stream | Description | Dependencies |
+|--------|-------------|--------------|
+| **A** | Dashboard Backend & Queries | Phase 5 complete |
+| **B** | Search & Reports Backend | Phase 5 complete |
+| **C** | Frontend Components | Streams A & B |
+
+```
+Phase 5 Complete
+     |
+     +---> Stream A (Dashboard Backend) [parallel]
+     |
+     +---> Stream B (Search & Reports) [parallel]
+     |
+     v
+Stream C (Frontend)
+     |
+     v
+Integration & Testing
+     |
+     v
+Audit
+```
+
+See [AGENTS.md](./AGENTS.md) for detailed agent work instructions.
 
 ---
 
@@ -58,6 +96,7 @@ None - uses existing tables with aggregation queries.
 - [ ] Dashboard shows accurate summary stats
 - [ ] Project cards display key metrics
 - [ ] Global search finds across entity types
+- [ ] Keyboard shortcut (Cmd+K) opens search
 - [ ] Profile can be updated
 - [ ] Password can be changed
 - [ ] Reports show correct data
@@ -66,4 +105,9 @@ None - uses existing tables with aggregation queries.
 
 ## Related Documentation
 
-- [API.md](./API.md) | [UI.md](./UI.md) | [CHECKLIST.md](./CHECKLIST.md)
+| Document | Purpose |
+|----------|---------|
+| [API.md](./API.md) | API endpoint contracts |
+| [UI.md](./UI.md) | UI wireframes |
+| [CHECKLIST.md](./CHECKLIST.md) | Implementation checklist |
+| [AGENTS.md](./AGENTS.md) | Agent work instructions |
