@@ -16,17 +16,17 @@ Step-by-step implementation tasks for AI integration.
 ## Database Setup
 
 ### Enable pgvector
-- [ ] Create migration `022_enable_pgvector.sql`
+- [ ] Create migration `026_enable_pgvector.sql`
 - [ ] Add `CREATE EXTENSION IF NOT EXISTS vector;`
 - [ ] Verify extension enabled in production
 
 ### Create Tables
-- [ ] Create migration `023_create_ai_conversations.sql`
-- [ ] Create migration `024_create_ai_messages.sql`
-- [ ] Create migration `025_create_ai_feedback.sql`
-- [ ] Create migration `026_create_ai_insights.sql`
-- [ ] Create migration `027_create_ai_patterns.sql`
-- [ ] Create migration `028_create_document_embeddings.sql`
+- [ ] Create migration `027_create_ai_conversations.sql`
+- [ ] Create migration `028_create_ai_messages.sql`
+- [ ] Create migration `029_create_ai_feedback.sql`
+- [ ] Create migration `030_create_ai_insights.sql`
+- [ ] Create migration `031_create_ai_patterns.sql`
+- [ ] Create migration `032_create_document_embeddings.sql`
 
 ### Create Indexes
 - [ ] Add builder_id indexes on all AI tables

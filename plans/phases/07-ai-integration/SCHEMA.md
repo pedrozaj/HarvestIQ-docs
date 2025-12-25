@@ -17,13 +17,13 @@ CREATE EXTENSION IF NOT EXISTS vector;
 ## Migration Order
 
 ```
-022_enable_pgvector.sql
-023_create_ai_conversations.sql
-024_create_ai_messages.sql
-025_create_ai_feedback.sql
-026_create_ai_insights.sql
-027_create_ai_patterns.sql
-028_create_document_embeddings.sql
+026_enable_pgvector.sql
+027_create_ai_conversations.sql
+028_create_ai_messages.sql
+029_create_ai_feedback.sql
+030_create_ai_insights.sql
+031_create_ai_patterns.sql
+032_create_document_embeddings.sql
 ```
 
 ---
