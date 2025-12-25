@@ -1418,6 +1418,246 @@ Content-Type: application/json
 
 ---
 
+## Document Endpoints
+
+Document management endpoints are nested under projects: `/api/projects/:id/documents`.
+
+### Get Upload URL
+
+Get a presigned URL to upload a file directly to R2 storage.
+
+```
+POST /api/projects/:id/documents/upload-url
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "filename": "invoice.pdf",
+  "mimeType": "application/pdf",
+  "sizeBytes": 1048576
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "uploadUrl": "https://r2.cloudflarestorage.com/...",
+    "storageKey": "documents/uuid/invoice.pdf"
+  }
+}
+```
+
+---
+
+### Analyze Document
+
+Use AI to analyze an uploaded document and suggest metadata.
+
+```
+POST /api/projects/:id/documents/analyze
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "storageKey": "documents/uuid/invoice.pdf",
+  "mimeType": "application/pdf",
+  "originalFilename": "invoice.pdf"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "suggestedName": "Plumbing Invoice - March 2025",
+    "suggestedType": "invoice",
+    "suggestedDescription": "Invoice from ABC Plumbing for bathroom fixtures",
+    "confidence": 0.92
+  }
+}
+```
+
+**Document Types:** `estimate`, `contract`, `permit`, `inspection`, `plan`, `invoice`, `receipt`, `photo`, `report`, `insurance`, `warranty`, `other`
+
+---
+
+### List Documents
+
+```
+GET /api/projects/:id/documents
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| type | string | Filter by document type |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "uploadedBy": "uuid",
+      "name": "Plumbing Invoice - March 2025",
+      "originalFilename": "invoice.pdf",
+      "storageKey": "documents/uuid/invoice.pdf",
+      "mimeType": "application/pdf",
+      "sizeBytes": 1048576,
+      "type": "invoice",
+      "description": "Invoice from ABC Plumbing",
+      "tags": ["plumbing", "march"],
+      "createdAt": "2025-12-25T10:00:00Z",
+      "updatedAt": "2025-12-25T10:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+### Create Document
+
+Create a document record after uploading to storage.
+
+```
+POST /api/projects/:id/documents
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Plumbing Invoice - March 2025",
+  "originalFilename": "invoice.pdf",
+  "storageKey": "documents/uuid/invoice.pdf",
+  "mimeType": "application/pdf",
+  "sizeBytes": 1048576,
+  "type": "invoice",
+  "description": "Invoice from ABC Plumbing",
+  "tags": ["plumbing"]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "name": "Plumbing Invoice - March 2025",
+    ...
+  }
+}
+```
+
+---
+
+### Get Document
+
+```
+GET /api/projects/:id/documents/:docId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "projectId": "uuid",
+    "name": "Plumbing Invoice - March 2025",
+    ...
+  }
+}
+```
+
+---
+
+### Get Download URL
+
+Get a presigned URL to download/view a document.
+
+```
+GET /api/projects/:id/documents/:docId/download
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "downloadUrl": "https://r2.cloudflarestorage.com/...",
+    "filename": "invoice.pdf",
+    "mimeType": "application/pdf"
+  }
+}
+```
+
+---
+
+### Update Document
+
+```
+PATCH /api/projects/:id/documents/:docId
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "type": "receipt",
+  "description": "Updated description",
+  "tags": ["updated", "tags"]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "name": "Updated Name",
+    ...
+  }
+}
+```
+
+---
+
+### Delete Document
+
+```
+DELETE /api/projects/:id/documents/:docId
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Document deleted"
+  }
+}
+```
+
+---
+
 ## Activity Endpoints
 
 Activity log endpoints are prefixed with `/api/activity`.
