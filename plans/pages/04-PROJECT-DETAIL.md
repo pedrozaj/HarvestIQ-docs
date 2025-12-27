@@ -102,7 +102,7 @@ Response:
 |          |  [Overview] [Schedule] [Budget] [Documents] [Payments] [Tasks]         |
 |          |  =============================================================         |
 |          |                                                                        |
-|          |  Schedule Views: [Task List] [Timeline/Gantt] [Milestones] [Calendar]  |
+|          |  Views: [Task List] [Gantt] [Timeline] [Whiteboard] [Milestones] [Calendar]
 ```
 
 ### Task List View

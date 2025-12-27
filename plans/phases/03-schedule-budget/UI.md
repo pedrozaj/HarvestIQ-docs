@@ -13,7 +13,7 @@ Default view when clicking Schedule tab.
 |  [Overview] [Schedule] [Budget] [Documents] [Payments] [Tasks]                    |
 |  ================================================================                 |
 |                                                                                   |
-|  [Task List] [Gantt] [Milestones] [Calendar]              [+ Add Task]            |
+|  [Task List] [Gantt] [Timeline] [Whiteboard] [Milestones] [Calendar]  [+ Add Task]|
 |  ============================================                                     |
 |                                                                                   |
 |  Phase: [All v]  Status: [All v]  Assignee: [All v]  [________Search______]       |
@@ -81,7 +81,99 @@ Timeline visualization.
 - Drag to resize/move (optional)
 - Color by status
 
-**Library recommendation:** frappe-gantt or dhtmlx-gantt
+**Implementation:** Custom-built with React and Tailwind CSS.
+
+---
+
+## Schedule Tab - Timeline View
+
+Horizontally scrollable timeline with tasks grouped by phase.
+
+```
++-----------------------------------------------------------------------------------+
+|  [Task List] [Gantt] [Timeline] [Whiteboard] [Milestones] [Calendar]              |
+|  ============================================                                     |
+|                                                                                   |
+|  Legend: [Not Started] [In Progress] [Completed] [Blocked] ◆ Milestone  | Today  |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+ |
+|  |        Dec 15    Dec 22    Dec 29    Jan 5     Jan 12    Jan 19            | |
+|  +-----------------------------------------------------------------------------+ |
+|  | Milestones                                                                  | |
+|  |    ◆ Foundation     ◆ Framing                                              | |
+|  +-----------------------------------------------------------------------------+ |
+|  | FOUNDATION (3 tasks)                                          |             | |
+|  |    [Site preparation========]                                               | |
+|  |        [Excavation===========]                                              | |
+|  |              [Pour foundation================]                              | |
+|  +-----------------------------------------------------------------------------+ |
+|  | FRAMING (5 tasks)                                                           | |
+|  |                       [First floor framing==========]                       | |
+|  |                                  [Second floor=============]                | |
+|  +-----------------------------------------------------------------------------+ |
+|                                                   Scroll right to see more →     |
++-----------------------------------------------------------------------------------+
+```
+
+### Timeline Features
+
+- Horizontally scrollable (60px per day)
+- Tasks stacked vertically per phase
+- Phase labels sticky on left
+- Week headers at top
+- Red "Today" marker line
+- Milestones row with diamond markers
+- Click task to edit
+- Summary footer with stats
+
+---
+
+## Schedule Tab - Whiteboard View
+
+Kanban-style board with draggable sticky notes.
+
+```
++-----------------------------------------------------------------------------------+
+|  [Task List] [Gantt] [Timeline] [Whiteboard] [Milestones] [Calendar]              |
+|  ============================================                                     |
+|                                                                                   |
+|  Whiteboard                                        Filter: [All Phases v]         |
+|  Drag and drop sticky notes to update task status                                 |
+|                                                                                   |
+|  +-----------------------------------------------------------------------------+ |
+|  | TO DO          | IN PROGRESS     | BLOCKED         | DONE                   | |
+|  | (5)            | (3)             | (1)             | (8)                    | |
+|  +-----------------------------------------------------------------------------+ |
+|  |                |                 |                 |                        | |
+|  | +----------+   | +----------+    | +----------+    | +----------+           | |
+|  | |[pushpin] |   | |[pushpin] |    | |[pushpin] |    | |[pushpin] |           | |
+|  | | Frame    |   | | Pour     |    | | Roof     |    | | Site     |           | |
+|  | | windows  |   | | foundation    | | trusses  |    | | prep     |           | |
+|  | |          |   | |          |    | |          |    | |          |           | |
+|  | | High     |   | | Medium   |    | | Urgent   |    | | Low      |           | |
+|  | | Dec 28   |   | | Dec 20   |    | | Jan 5    |    | | Dec 1    |           | |
+|  | +----------+   | +----------+    | +----------+    | +----------+           | |
+|  |                |                 |                 |                        | |
+|  | +----------+   | +----------+    |                 | +----------+           | |
+|  | |[pushpin] |   | |[pushpin] |    |                 | |[pushpin] |           | |
+|  | | Order    |   | | Install  |    |                 | | Excavate |           | |
+|  | | cabinets |   | | conduit  |    |                 | |          |           | |
+|  | +----------+   | +----------+    |                 | +----------+           | |
+|  +-----------------------------------------------------------------------------+ |
+|                                                                                   |
+|  Drag notes between columns to update status                                      |
++-----------------------------------------------------------------------------------+
+```
+
+### Whiteboard Features
+
+- Drag-and-drop between columns to change status
+- Sticky notes colored by phase
+- Priority badge on each note
+- Phase filter dropdown
+- Push-pin visual on each note
+- Cork board aesthetic
+- Click to edit task details
 
 ---
 
@@ -241,7 +333,9 @@ Timeline visualization.
 | TaskRow | Individual task with actions |
 | TaskForm | Create/edit task modal |
 | PhaseHeader | Collapsible phase section |
-| GanttChart | Timeline visualization |
+| GanttChart | Gantt chart visualization |
+| TimelineChart | Horizontally scrollable timeline |
+| WhiteboardView | Kanban-style sticky note board |
 | CalendarView | Calendar display |
 | MilestoneList | Milestone grouping |
 | MilestoneForm | Create/edit milestone |
