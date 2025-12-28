@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-28 08:16:07 UTC
+-- Generated: 2025-12-28 08:17:37 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict wnT3IeB2QYbIys4bUAB7E4knFvEQcdooh0JWN5rL8qKSK1PJWoMXT8BjKFRzcKi
+\restrict VlI0GMKDVOif2ueRrUMUkXosHsybKZYRwdNjJgVVGskZGvmBQVlgnuWAMeNyjLB
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -493,7 +493,8 @@ CREATE TABLE public.budget_category_benchmarks (
     source character varying(100) DEFAULT 'industry_standard'::character varying,
     notes text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
 );
 
 
@@ -3520,5 +3521,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict wnT3IeB2QYbIys4bUAB7E4knFvEQcdooh0JWN5rL8qKSK1PJWoMXT8BjKFRzcKi
+\unrestrict VlI0GMKDVOif2ueRrUMUkXosHsybKZYRwdNjJgVVGskZGvmBQVlgnuWAMeNyjLB
 
