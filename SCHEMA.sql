@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-25 18:49:55 UTC
+-- Generated: 2025-12-28 06:05:52 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict bS52iC5ZSPFHvezDcN7eq70gR1Oh5kzKaBCdOH3lb9REurR33DatSBrEqchZ7AM
+\restrict ynKliiKcRdcp376hEdpdrNzg8tVDUoGx5sfDn4B8eBN0EeVr8Ge1VTgwR6H1c1l
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -469,7 +469,9 @@ CREATE TABLE public.budget_categories (
     name character varying(100) NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    group_name character varying(50) DEFAULT 'Vertical'::character varying,
+    deleted_at timestamp with time zone
 );
 
 
@@ -489,7 +491,10 @@ CREATE TABLE public.budget_items (
     actual_amount numeric(12,2) DEFAULT 0,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    total_quantity integer DEFAULT 1 NOT NULL,
+    completed_quantity integer DEFAULT 0 NOT NULL,
+    CONSTRAINT completed_lte_total CHECK ((completed_quantity <= total_quantity))
 );
 
 
@@ -516,6 +521,30 @@ CREATE TABLE public.builders (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
     ai_tokens_limit integer DEFAULT 100000 NOT NULL
+);
+
+
+--
+-- Name: contractors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.contractors (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    company character varying(255),
+    specialty character varying(100),
+    phone character varying(50),
+    email character varying(255),
+    address text,
+    status character varying(50) DEFAULT 'available'::character varying,
+    rating numeric(2,1) DEFAULT 0,
+    notes text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    deleted_at timestamp with time zone,
+    CONSTRAINT contractors_rating_check CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
+    CONSTRAINT contractors_status_check CHECK (((status)::text = ANY ((ARRAY['available'::character varying, 'on_project'::character varying, 'unavailable'::character varying])::text[])))
 );
 
 
@@ -749,6 +778,23 @@ CREATE TABLE public.payments (
 
 
 --
+-- Name: project_contractors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_contractors (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    project_id uuid NOT NULL,
+    contractor_id uuid NOT NULL,
+    assigned_at timestamp with time zone DEFAULT now(),
+    assigned_by uuid,
+    notes text,
+    created_at timestamp with time zone DEFAULT now(),
+    deleted_at timestamp with time zone
+);
+
+
+--
 -- Name: projects; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -872,7 +918,9 @@ CREATE TABLE public.schedule_tasks (
     actual_hours numeric(10,2),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    total_quantity integer DEFAULT 1 NOT NULL,
+    completed_quantity integer DEFAULT 0 NOT NULL
 );
 
 
@@ -1149,6 +1197,14 @@ ALTER TABLE ONLY public.builders
 
 
 --
+-- Name: contractors contractors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contractors
+    ADD CONSTRAINT contractors_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: document_embeddings document_embeddings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1250,6 +1306,22 @@ ALTER TABLE ONLY public.organizations
 
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_contractors project_contractors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_contractors project_contractors_project_id_contractor_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_project_id_contractor_id_key UNIQUE (project_id, contractor_id);
 
 
 --
@@ -1571,6 +1643,20 @@ CREATE INDEX idx_budget_categories_builder_id ON public.budget_categories USING 
 
 
 --
+-- Name: idx_budget_categories_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_categories_deleted_at ON public.budget_categories USING btree (deleted_at);
+
+
+--
+-- Name: idx_budget_categories_group_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_categories_group_name ON public.budget_categories USING btree (group_name);
+
+
+--
 -- Name: idx_budget_items_category_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1603,6 +1689,27 @@ CREATE INDEX idx_builders_deleted_at ON public.builders USING btree (deleted_at)
 --
 
 CREATE INDEX idx_builders_subscription_status ON public.builders USING btree (subscription_status);
+
+
+--
+-- Name: idx_contractors_builder; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_contractors_builder ON public.contractors USING btree (builder_id);
+
+
+--
+-- Name: idx_contractors_specialty; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_contractors_specialty ON public.contractors USING btree (specialty);
+
+
+--
+-- Name: idx_contractors_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_contractors_status ON public.contractors USING btree (status);
 
 
 --
@@ -1869,6 +1976,27 @@ CREATE INDEX idx_payments_payment_date ON public.payments USING btree (payment_d
 --
 
 CREATE INDEX idx_payments_project_id ON public.payments USING btree (project_id);
+
+
+--
+-- Name: idx_project_contractors_builder; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_contractors_builder ON public.project_contractors USING btree (builder_id);
+
+
+--
+-- Name: idx_project_contractors_contractor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_contractors_contractor ON public.project_contractors USING btree (contractor_id);
+
+
+--
+-- Name: idx_project_contractors_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_contractors_project ON public.project_contractors USING btree (project_id);
 
 
 --
@@ -2391,6 +2519,14 @@ ALTER TABLE ONLY public.budget_items
 
 
 --
+-- Name: contractors contractors_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contractors
+    ADD CONSTRAINT contractors_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id) ON DELETE CASCADE;
+
+
+--
 -- Name: document_embeddings document_embeddings_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2596,6 +2732,38 @@ ALTER TABLE ONLY public.payments
 
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_contractors project_contractors_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.users(id);
+
+
+--
+-- Name: project_contractors project_contractors_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_contractors project_contractors_contractor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_contractor_id_fkey FOREIGN KEY (contractor_id) REFERENCES public.contractors(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_contractors project_contractors_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_contractors
+    ADD CONSTRAINT project_contractors_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -2818,5 +2986,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bS52iC5ZSPFHvezDcN7eq70gR1Oh5kzKaBCdOH3lb9REurR33DatSBrEqchZ7AM
+\unrestrict ynKliiKcRdcp376hEdpdrNzg8tVDUoGx5sfDn4B8eBN0EeVr8Ge1VTgwR6H1c1l
 
