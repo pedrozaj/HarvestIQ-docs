@@ -2658,6 +2658,353 @@ Authorization: Bearer <token>
 
 ---
 
+## Capital Risk Endpoints
+
+All risk endpoints require authentication and are prefixed with `/api/risk`. The Capital Risk system analyzes project data to surface where time and money are at risk and recommend interventions.
+
+### Get Risk Dashboard
+
+Get portfolio-wide risk summary with all project risks and top interventions.
+
+```
+GET /api/risk/dashboard
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "portfolio": {
+      "totalCapitalAtRisk": 125000,
+      "projectCount": 5,
+      "highRiskCount": 2,
+      "criticalRiskCount": 0,
+      "riskDistribution": {
+        "low": 2,
+        "medium": 1,
+        "high": 2,
+        "critical": 0
+      }
+    },
+    "projectRisks": [
+      {
+        "projectId": "uuid",
+        "projectName": "Riverside Apartments",
+        "compositeScore": 62,
+        "riskLevel": "high",
+        "capitalAtRisk": 75000,
+        "trend": "worsening",
+        "overdueTasksCount": 5,
+        "budgetVariancePercent": 12.5
+      }
+    ],
+    "topInterventions": [
+      {
+        "id": "uuid",
+        "projectId": "uuid",
+        "projectName": "Riverside Apartments",
+        "type": "overdue_task",
+        "severity": "high",
+        "priorityRank": 1,
+        "title": "5 overdue tasks need attention",
+        "description": "Foundation phase has 5 overdue tasks...",
+        "recommendedAction": "Review and update task deadlines",
+        "capitalImpact": 25000,
+        "daysImpact": 14
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Get Portfolio Metrics
+
+Get aggregated portfolio risk metrics.
+
+```
+GET /api/risk/portfolio
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "totalCapitalAtRisk": 125000,
+    "projectCount": 5,
+    "highRiskCount": 2,
+    "criticalRiskCount": 0,
+    "riskDistribution": {
+      "low": 2,
+      "medium": 1,
+      "high": 2,
+      "critical": 0
+    }
+  }
+}
+```
+
+---
+
+### Get Project Risk Detail
+
+Get detailed risk breakdown for a specific project.
+
+```
+GET /api/risk/projects/:id
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "project": {
+      "id": "uuid",
+      "name": "Riverside Apartments",
+      "unitType": "apartments",
+      "units": 24,
+      "status": "active",
+      "startDate": "2025-01-15",
+      "endDate": "2025-12-31"
+    },
+    "metrics": {
+      "compositeScore": 62,
+      "riskLevel": "high",
+      "capitalAtRisk": 75000,
+      "scheduleRiskScore": 58,
+      "budgetRiskScore": 65,
+      "trend": "worsening",
+      "trendVelocity": 0.15,
+      "overdueTasksCount": 5,
+      "blockedTasksCount": 2,
+      "phaseDelayDays": 7,
+      "milestoneSlippageDays": 10,
+      "budgetVariancePercent": 12.5,
+      "overBudgetCategoriesCount": 3,
+      "burnRateDeviation": 18.5,
+      "costPerUnitVariance": 8.2,
+      "calculatedAt": "2025-12-27T10:00:00Z"
+    },
+    "interventions": [
+      {
+        "id": "uuid",
+        "type": "overdue_task",
+        "severity": "high",
+        "priorityRank": 1,
+        "title": "5 overdue tasks need attention",
+        "description": "Foundation phase has 5 overdue tasks...",
+        "recommendedAction": "Review and update task deadlines",
+        "entityType": "task",
+        "entityId": "uuid",
+        "entityName": "Pour footings",
+        "capitalImpact": 25000,
+        "daysImpact": 14,
+        "status": "active",
+        "createdAt": "2025-12-27T08:00:00Z"
+      }
+    ],
+    "benchmarkComparison": {
+      "scheduleSummary": {
+        "elapsed": 45,
+        "remaining": 120,
+        "progressPercent": 27.3
+      },
+      "budgetCategories": [
+        {
+          "name": "Foundation",
+          "actual": 55000,
+          "actualPercent": 11.0,
+          "benchmarkTypical": 10.0,
+          "variance": 1.0
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### List Interventions
+
+Get filterable list of all interventions across projects.
+
+```
+GET /api/risk/interventions
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| status | string | Filter by status: `active`, `acknowledged`, `resolved` |
+| severity | string | Filter by severity: `low`, `medium`, `high`, `critical` |
+| type | string | Filter by type: `overdue_task`, `blocked_task`, `budget_overrun`, `milestone_slip`, `phase_delay`, `burn_rate` |
+| limit | number | Results per page (default: 20, max: 100) |
+| offset | number | Pagination offset |
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "projectId": "uuid",
+      "type": "overdue_task",
+      "severity": "high",
+      "priorityRank": 1,
+      "title": "5 overdue tasks need attention",
+      "description": "Foundation phase has 5 overdue tasks...",
+      "recommendedAction": "Review and update task deadlines",
+      "entityType": "task",
+      "entityId": "uuid",
+      "entityName": "Pour footings",
+      "capitalImpact": 25000,
+      "daysImpact": 14,
+      "status": "active",
+      "acknowledgedAt": null,
+      "createdAt": "2025-12-27T08:00:00Z"
+    }
+  ],
+  "total": 15
+}
+```
+
+---
+
+### Acknowledge Intervention
+
+Mark an intervention as acknowledged.
+
+```
+POST /api/risk/interventions/:id/acknowledge
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "status": "acknowledged",
+    "acknowledgedAt": "2025-12-27T10:00:00Z",
+    "message": "Intervention acknowledged"
+  }
+}
+```
+
+---
+
+### Recalculate Risk
+
+Trigger risk recalculation for one or all projects.
+
+```
+POST /api/risk/recalculate
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body (optional):**
+```json
+{
+  "projectId": "uuid"
+}
+```
+
+**Response (200 OK) - Single project:**
+```json
+{
+  "data": {
+    "projectId": "uuid",
+    "compositeScore": 62,
+    "riskLevel": "high",
+    "capitalAtRisk": 75000,
+    "message": "Risk recalculated for project"
+  }
+}
+```
+
+**Response (200 OK) - All projects:**
+```json
+{
+  "data": {
+    "projectsCalculated": 5,
+    "message": "Risk recalculated for 5 projects"
+  }
+}
+```
+
+---
+
+### Get Builder Benchmarks
+
+Get learned benchmarks from completed projects.
+
+```
+GET /api/risk/benchmarks
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| unitType | string | Filter by unit type: `single_family`, `townhomes`, `condos`, `apartments` |
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "unitType": "single_family",
+      "sampleCount": 5,
+      "confidenceLevel": "medium",
+      "blendWeight": 0.5,
+      "avgDurationDays": 180,
+      "avgCostPerUnit": 250000,
+      "lastCalculatedAt": "2025-12-27T06:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### Recalculate Benchmarks
+
+Recalculate builder benchmarks from completed project outcomes.
+
+```
+POST /api/risk/benchmarks/recalculate
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "benchmarks": [
+      {
+        "unitType": "single_family",
+        "sampleCount": 5,
+        "confidenceLevel": "medium",
+        "blendWeight": 0.5,
+        "avgDurationDays": 180,
+        "avgCostPerUnit": 250000,
+        "lastCalculatedAt": "2025-12-27T10:00:00Z"
+      }
+    ],
+    "message": "Builder benchmarks recalculated from project outcomes"
+  }
+}
+```
+
+---
+
 ## Reminder Endpoints
 
 All reminder endpoints require authentication and are prefixed with `/api/reminders`.

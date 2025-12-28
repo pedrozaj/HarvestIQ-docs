@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-28 06:39:54 UTC
+-- Generated: 2025-12-28 08:08:30 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict GZTuTSfyHy1X0jEusx8wMWekWr1ZtqgdH2TBlIehcd7vWY7U8iH4zYVp0o2EQ1Z
+\restrict 5Hx4x9a6fhIS9geeDDZt6OYrTq104F0Ky668TNyRHgeZntOiBEukE7MZWWBnyyD
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -476,6 +476,28 @@ CREATE TABLE public.budget_categories (
 
 
 --
+-- Name: budget_category_benchmarks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.budget_category_benchmarks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    unit_type character varying(50) NOT NULL,
+    category_name character varying(100) NOT NULL,
+    group_name character varying(50),
+    min_percent numeric(5,2) NOT NULL,
+    typical_percent numeric(5,2) NOT NULL,
+    max_percent numeric(5,2) NOT NULL,
+    cost_per_unit_min numeric(12,2),
+    cost_per_unit_typical numeric(12,2),
+    cost_per_unit_max numeric(12,2),
+    source character varying(100) DEFAULT 'industry_standard'::character varying,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: budget_items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -495,6 +517,29 @@ CREATE TABLE public.budget_items (
     total_quantity integer DEFAULT 1 NOT NULL,
     completed_quantity integer DEFAULT 0 NOT NULL,
     CONSTRAINT completed_lte_total CHECK ((completed_quantity <= total_quantity))
+);
+
+
+--
+-- Name: builder_benchmarks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.builder_benchmarks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    unit_type character varying(50) NOT NULL,
+    phase_benchmarks jsonb,
+    category_benchmarks jsonb,
+    avg_duration_days numeric(10,2),
+    avg_cost_per_unit numeric(12,2),
+    avg_budget_variance_percent numeric(10,2),
+    avg_duration_variance_percent numeric(10,2),
+    sample_count integer DEFAULT 0 NOT NULL,
+    confidence_level character varying(20) DEFAULT 'low'::character varying NOT NULL,
+    blend_weight numeric(3,2) DEFAULT 0 NOT NULL,
+    last_calculated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -559,7 +604,8 @@ CREATE TABLE public.document_embeddings (
     chunk_index integer NOT NULL,
     chunk_text text NOT NULL,
     embedding jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
 );
 
 
@@ -623,6 +669,25 @@ CREATE SEQUENCE public.files_id_seq
 --
 
 ALTER SEQUENCE public.files_id_seq OWNED BY public.files.id;
+
+
+--
+-- Name: industry_benchmarks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.industry_benchmarks (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    unit_type character varying(50) NOT NULL,
+    phase_name character varying(100) NOT NULL,
+    metric_type character varying(50) NOT NULL,
+    min_value numeric(10,2) NOT NULL,
+    typical_value numeric(10,2) NOT NULL,
+    max_value numeric(10,2) NOT NULL,
+    source character varying(100) DEFAULT 'industry_standard'::character varying,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
 
 --
@@ -795,6 +860,69 @@ CREATE TABLE public.project_contractors (
 
 
 --
+-- Name: project_outcomes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_outcomes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    project_id uuid NOT NULL,
+    unit_type character varying(50) NOT NULL,
+    unit_count integer NOT NULL,
+    planned_start_date date,
+    planned_end_date date,
+    actual_start_date date,
+    actual_end_date date,
+    planned_duration_days integer,
+    actual_duration_days integer,
+    duration_variance_days integer,
+    duration_variance_percent numeric(10,2),
+    total_estimated_budget numeric(14,2) NOT NULL,
+    total_actual_cost numeric(14,2) NOT NULL,
+    budget_variance numeric(14,2) NOT NULL,
+    budget_variance_percent numeric(10,2) NOT NULL,
+    final_cost_per_unit numeric(12,2),
+    phase_outcomes jsonb,
+    category_outcomes jsonb,
+    change_order_count integer DEFAULT 0,
+    change_order_total numeric(12,2) DEFAULT 0,
+    completed_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: project_risk_metrics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_risk_metrics (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    project_id uuid NOT NULL,
+    overdue_tasks_count integer DEFAULT 0 NOT NULL,
+    blocked_tasks_count integer DEFAULT 0 NOT NULL,
+    phase_delay_days integer DEFAULT 0 NOT NULL,
+    milestone_slippage_days integer DEFAULT 0 NOT NULL,
+    schedule_risk_score integer DEFAULT 0 NOT NULL,
+    budget_variance_percent numeric(10,2) DEFAULT 0 NOT NULL,
+    over_budget_categories_count integer DEFAULT 0 NOT NULL,
+    burn_rate_deviation numeric(10,2) DEFAULT 0 NOT NULL,
+    cost_per_unit_variance numeric(10,2) DEFAULT 0 NOT NULL,
+    budget_risk_score integer DEFAULT 0 NOT NULL,
+    composite_risk_score integer DEFAULT 0 NOT NULL,
+    risk_level character varying(20) DEFAULT 'low'::character varying NOT NULL,
+    capital_at_risk numeric(14,2) DEFAULT 0 NOT NULL,
+    trend character varying(20) DEFAULT 'stable'::character varying NOT NULL,
+    previous_composite_score integer,
+    trend_velocity numeric(5,2) DEFAULT 0,
+    calculated_at timestamp with time zone DEFAULT now() NOT NULL,
+    calculation_version integer DEFAULT 1 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: projects; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -850,6 +978,36 @@ CREATE TABLE public.reminders (
     remind_at timestamp with time zone NOT NULL,
     recurrence character varying(20) DEFAULT 'none'::character varying,
     is_dismissed boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+
+--
+-- Name: risk_interventions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.risk_interventions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    builder_id uuid NOT NULL,
+    project_id uuid NOT NULL,
+    intervention_type character varying(50) NOT NULL,
+    severity character varying(20) NOT NULL,
+    priority_rank integer DEFAULT 0 NOT NULL,
+    title character varying(255) NOT NULL,
+    description text,
+    recommended_action text NOT NULL,
+    entity_type character varying(50),
+    entity_id uuid,
+    entity_name character varying(255),
+    capital_impact numeric(12,2) DEFAULT 0,
+    days_impact integer DEFAULT 0,
+    status character varying(30) DEFAULT 'active'::character varying NOT NULL,
+    acknowledged_at timestamp with time zone,
+    acknowledged_by uuid,
+    resolved_at timestamp with time zone,
+    expires_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone
@@ -1181,11 +1339,27 @@ ALTER TABLE ONLY public.budget_categories
 
 
 --
+-- Name: budget_category_benchmarks budget_category_benchmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.budget_category_benchmarks
+    ADD CONSTRAINT budget_category_benchmarks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: budget_items budget_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.budget_items
     ADD CONSTRAINT budget_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: builder_benchmarks builder_benchmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.builder_benchmarks
+    ADD CONSTRAINT builder_benchmarks_pkey PRIMARY KEY (id);
 
 
 --
@@ -1234,6 +1408,14 @@ ALTER TABLE ONLY public.files
 
 ALTER TABLE ONLY public.files
     ADD CONSTRAINT files_storage_key_key UNIQUE (storage_key);
+
+
+--
+-- Name: industry_benchmarks industry_benchmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.industry_benchmarks
+    ADD CONSTRAINT industry_benchmarks_pkey PRIMARY KEY (id);
 
 
 --
@@ -1325,6 +1507,22 @@ ALTER TABLE ONLY public.project_contractors
 
 
 --
+-- Name: project_outcomes project_outcomes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_outcomes
+    ADD CONSTRAINT project_outcomes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_risk_metrics project_risk_metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_risk_metrics
+    ADD CONSTRAINT project_risk_metrics_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1346,6 +1544,14 @@ ALTER TABLE ONLY public.refresh_tokens
 
 ALTER TABLE ONLY public.reminders
     ADD CONSTRAINT reminders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: risk_interventions risk_interventions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.risk_interventions
+    ADD CONSTRAINT risk_interventions_pkey PRIMARY KEY (id);
 
 
 --
@@ -1413,6 +1619,30 @@ ALTER TABLE ONLY public.budget_categories
 
 
 --
+-- Name: budget_category_benchmarks uq_budget_category_benchmarks; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.budget_category_benchmarks
+    ADD CONSTRAINT uq_budget_category_benchmarks UNIQUE (unit_type, category_name);
+
+
+--
+-- Name: builder_benchmarks uq_builder_benchmarks; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.builder_benchmarks
+    ADD CONSTRAINT uq_builder_benchmarks UNIQUE (builder_id, unit_type);
+
+
+--
+-- Name: industry_benchmarks uq_industry_benchmarks; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.industry_benchmarks
+    ADD CONSTRAINT uq_industry_benchmarks UNIQUE (unit_type, phase_name, metric_type);
+
+
+--
 -- Name: invitations uq_invitations_org_email; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1434,6 +1664,22 @@ ALTER TABLE ONLY public.notification_preferences
 
 ALTER TABLE ONLY public.organization_members
     ADD CONSTRAINT uq_org_members_user_org UNIQUE (organization_id, user_id);
+
+
+--
+-- Name: project_outcomes uq_project_outcomes; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_outcomes
+    ADD CONSTRAINT uq_project_outcomes UNIQUE (project_id);
+
+
+--
+-- Name: project_risk_metrics uq_project_risk_metrics; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_risk_metrics
+    ADD CONSTRAINT uq_project_risk_metrics UNIQUE (project_id);
 
 
 --
@@ -1657,6 +1903,27 @@ CREATE INDEX idx_budget_categories_group_name ON public.budget_categories USING 
 
 
 --
+-- Name: idx_budget_category_benchmarks_category_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_category_benchmarks_category_name ON public.budget_category_benchmarks USING btree (category_name);
+
+
+--
+-- Name: idx_budget_category_benchmarks_group_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_category_benchmarks_group_name ON public.budget_category_benchmarks USING btree (group_name);
+
+
+--
+-- Name: idx_budget_category_benchmarks_unit_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_category_benchmarks_unit_type ON public.budget_category_benchmarks USING btree (unit_type);
+
+
+--
 -- Name: idx_budget_items_category_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1675,6 +1942,27 @@ CREATE INDEX idx_budget_items_phase_id ON public.budget_items USING btree (phase
 --
 
 CREATE INDEX idx_budget_items_project_id ON public.budget_items USING btree (project_id);
+
+
+--
+-- Name: idx_builder_benchmarks_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_builder_benchmarks_builder_id ON public.builder_benchmarks USING btree (builder_id);
+
+
+--
+-- Name: idx_builder_benchmarks_confidence; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_builder_benchmarks_confidence ON public.builder_benchmarks USING btree (confidence_level);
+
+
+--
+-- Name: idx_builder_benchmarks_unit_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_builder_benchmarks_unit_type ON public.builder_benchmarks USING btree (unit_type);
 
 
 --
@@ -1710,6 +1998,13 @@ CREATE INDEX idx_contractors_specialty ON public.contractors USING btree (specia
 --
 
 CREATE INDEX idx_contractors_status ON public.contractors USING btree (status);
+
+
+--
+-- Name: idx_document_embeddings_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_embeddings_deleted_at ON public.document_embeddings USING btree (deleted_at) WHERE (deleted_at IS NULL);
 
 
 --
@@ -1752,6 +2047,27 @@ CREATE INDEX idx_documents_tags ON public.documents USING gin (tags);
 --
 
 CREATE INDEX idx_documents_type ON public.documents USING btree (type);
+
+
+--
+-- Name: idx_industry_benchmarks_metric_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_industry_benchmarks_metric_type ON public.industry_benchmarks USING btree (metric_type);
+
+
+--
+-- Name: idx_industry_benchmarks_phase_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_industry_benchmarks_phase_name ON public.industry_benchmarks USING btree (phase_name);
+
+
+--
+-- Name: idx_industry_benchmarks_unit_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_industry_benchmarks_unit_type ON public.industry_benchmarks USING btree (unit_type);
 
 
 --
@@ -2000,6 +2316,69 @@ CREATE INDEX idx_project_contractors_project ON public.project_contractors USING
 
 
 --
+-- Name: idx_project_outcomes_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_outcomes_builder_id ON public.project_outcomes USING btree (builder_id);
+
+
+--
+-- Name: idx_project_outcomes_completed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_outcomes_completed_at ON public.project_outcomes USING btree (completed_at);
+
+
+--
+-- Name: idx_project_outcomes_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_outcomes_project_id ON public.project_outcomes USING btree (project_id);
+
+
+--
+-- Name: idx_project_outcomes_unit_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_outcomes_unit_type ON public.project_outcomes USING btree (unit_type);
+
+
+--
+-- Name: idx_project_risk_metrics_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_risk_metrics_builder_id ON public.project_risk_metrics USING btree (builder_id);
+
+
+--
+-- Name: idx_project_risk_metrics_capital_at_risk; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_risk_metrics_capital_at_risk ON public.project_risk_metrics USING btree (capital_at_risk DESC);
+
+
+--
+-- Name: idx_project_risk_metrics_composite_score; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_risk_metrics_composite_score ON public.project_risk_metrics USING btree (composite_risk_score DESC);
+
+
+--
+-- Name: idx_project_risk_metrics_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_risk_metrics_project_id ON public.project_risk_metrics USING btree (project_id);
+
+
+--
+-- Name: idx_project_risk_metrics_risk_level; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_risk_metrics_risk_level ON public.project_risk_metrics USING btree (risk_level);
+
+
+--
 -- Name: idx_projects_builder_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2088,6 +2467,62 @@ CREATE INDEX idx_reminders_remind_at ON public.reminders USING btree (remind_at)
 --
 
 CREATE INDEX idx_reminders_user_id ON public.reminders USING btree (user_id) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: idx_risk_interventions_builder_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_builder_id ON public.risk_interventions USING btree (builder_id);
+
+
+--
+-- Name: idx_risk_interventions_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_deleted_at ON public.risk_interventions USING btree (deleted_at);
+
+
+--
+-- Name: idx_risk_interventions_entity; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_entity ON public.risk_interventions USING btree (entity_type, entity_id);
+
+
+--
+-- Name: idx_risk_interventions_priority; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_priority ON public.risk_interventions USING btree (priority_rank);
+
+
+--
+-- Name: idx_risk_interventions_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_project_id ON public.risk_interventions USING btree (project_id);
+
+
+--
+-- Name: idx_risk_interventions_severity; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_severity ON public.risk_interventions USING btree (severity);
+
+
+--
+-- Name: idx_risk_interventions_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_status ON public.risk_interventions USING btree (status);
+
+
+--
+-- Name: idx_risk_interventions_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_risk_interventions_type ON public.risk_interventions USING btree (intervention_type);
 
 
 --
@@ -2252,10 +2687,31 @@ ALTER INDEX pgboss.job_pkey ATTACH PARTITION pgboss.job_common_pkey;
 
 
 --
+-- Name: budget_category_benchmarks update_budget_category_benchmarks_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_budget_category_benchmarks_updated_at BEFORE UPDATE ON public.budget_category_benchmarks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: builder_benchmarks update_builder_benchmarks_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_builder_benchmarks_updated_at BEFORE UPDATE ON public.builder_benchmarks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: builders update_builders_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER update_builders_updated_at BEFORE UPDATE ON public.builders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: industry_benchmarks update_industry_benchmarks_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_industry_benchmarks_updated_at BEFORE UPDATE ON public.industry_benchmarks FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
@@ -2273,10 +2729,24 @@ CREATE TRIGGER update_organizations_updated_at BEFORE UPDATE ON public.organizat
 
 
 --
+-- Name: project_risk_metrics update_project_risk_metrics_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_project_risk_metrics_updated_at BEFORE UPDATE ON public.project_risk_metrics FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: projects update_projects_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON public.projects FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: risk_interventions update_risk_interventions_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_risk_interventions_updated_at BEFORE UPDATE ON public.risk_interventions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
@@ -2516,6 +2986,14 @@ ALTER TABLE ONLY public.budget_items
 
 ALTER TABLE ONLY public.budget_items
     ADD CONSTRAINT budget_items_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
+-- Name: builder_benchmarks builder_benchmarks_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.builder_benchmarks
+    ADD CONSTRAINT builder_benchmarks_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
 
 
 --
@@ -2767,6 +3245,38 @@ ALTER TABLE ONLY public.project_contractors
 
 
 --
+-- Name: project_outcomes project_outcomes_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_outcomes
+    ADD CONSTRAINT project_outcomes_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: project_outcomes project_outcomes_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_outcomes
+    ADD CONSTRAINT project_outcomes_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: project_risk_metrics project_risk_metrics_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_risk_metrics
+    ADD CONSTRAINT project_risk_metrics_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: project_risk_metrics project_risk_metrics_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_risk_metrics
+    ADD CONSTRAINT project_risk_metrics_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: projects projects_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2828,6 +3338,30 @@ ALTER TABLE ONLY public.reminders
 
 ALTER TABLE ONLY public.reminders
     ADD CONSTRAINT reminders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: risk_interventions risk_interventions_acknowledged_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.risk_interventions
+    ADD CONSTRAINT risk_interventions_acknowledged_by_fkey FOREIGN KEY (acknowledged_by) REFERENCES public.users(id);
+
+
+--
+-- Name: risk_interventions risk_interventions_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.risk_interventions
+    ADD CONSTRAINT risk_interventions_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id);
+
+
+--
+-- Name: risk_interventions risk_interventions_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.risk_interventions
+    ADD CONSTRAINT risk_interventions_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -2986,5 +3520,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict GZTuTSfyHy1X0jEusx8wMWekWr1ZtqgdH2TBlIehcd7vWY7U8iH4zYVp0o2EQ1Z
+\unrestrict 5Hx4x9a6fhIS9geeDDZt6OYrTq104F0Ky668TNyRHgeZntOiBEukE7MZWWBnyyD
 
