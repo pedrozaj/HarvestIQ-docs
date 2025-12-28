@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-28 08:23:30 UTC
+-- Generated: 2025-12-28 08:28:03 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict saIIBRQvHhlK6C4gpgaqldUHhcJickGRcJePMy0HBaEB1E3WeCgndL5XimVJ1qu
+\restrict 4qDazgFth81raX3qmnQRXixX3ys5dBsnj92PaLvQRn6YREAgF3EtRR502udeVks
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -3521,5 +3521,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict saIIBRQvHhlK6C4gpgaqldUHhcJickGRcJePMy0HBaEB1E3WeCgndL5XimVJ1qu
+\unrestrict 4qDazgFth81raX3qmnQRXixX3ys5dBsnj92PaLvQRn6YREAgF3EtRR502udeVks
 

@@ -31,6 +31,9 @@ HarvestIQ is a full-featured, multi-tenant SaaS construction management platform
 | Feature | Description | Status |
 |---------|-------------|--------|
 | **Multi-Tenant Architecture** | Each builder company has isolated data with their own users, organizations, and projects | Complete |
+| **Capital Risk Dashboard** | Intelligence layer surfacing where time and money are at risk across the portfolio | Complete |
+| **Risk Interventions** | Ranked action items with recommended interventions and capital impact | Complete |
+| **Industry Benchmarks** | Compare project performance against NAHB/RSMeans industry standards | Complete |
 | **Project Management** | Create and manage multiple construction projects with status tracking | Complete |
 | **Schedule Management** | Phases, tasks, milestones, dependencies, and Gantt-style views | Complete |
 | **Budget Tracking** | Categories, line items, variance analysis, and cost-per-unit calculations | Complete |
@@ -78,7 +81,46 @@ The landing page showcases HarvestIQ's value proposition with:
 - Email verification flow
 - Password reset functionality
 
-### 3. Dashboard
+### 3. Capital Risk (Default Landing Page)
+
+The Capital Risk dashboard is the new default landing page, providing an intelligence layer that answers: **"Where do I need to intervene right now to protect time and capital?"**
+
+**Portfolio Summary:**
+- Total Capital at Risk across all active projects
+- Risk distribution breakdown (Critical, High, Medium, Low)
+- Average portfolio risk score with trend indicator
+
+**Project Risk Overview Table:**
+- All projects ranked by composite risk score
+- Schedule and budget risk scores with visual progress bars
+- Capital at risk per project
+- Trend indicators (improving, stable, worsening)
+- Quick issue badges (overdue tasks, blocked tasks, over budget)
+
+**Top Interventions Panel:**
+- Ranked list of recommended actions
+- Severity levels with color coding
+- Capital and schedule impact for each intervention
+- One-click acknowledgment
+
+**Project Risk Detail Page:**
+- Composite, schedule, and budget risk gauges
+- Detailed metrics (overdue tasks, phase delays, milestone slippage)
+- Budget vs industry benchmark comparison table
+- Active interventions for the project
+
+**Risk Calculation System:**
+- Schedule Risk (0-100): Overdue tasks, blocked tasks, phase delays, milestone slippage
+- Budget Risk (0-100): Variance, over-budget categories, burn rate deviation, cost per unit
+- Composite Score: Weighted combination with trend modifiers
+- Risk Levels: Critical (>=75), High (>=50), Medium (>=25), Low (<25)
+
+**Industry Benchmarks:**
+- Phase duration benchmarks by unit type (single family, townhomes, condos)
+- Budget category percentages from NAHB/RSMeans standards
+- Builder-specific learned benchmarks from completed projects
+
+### 4. Dashboard
 
 ![Dashboard](screenshots/04-dashboard.png)
 
@@ -89,7 +131,7 @@ The dashboard provides an at-a-glance overview:
 - **My Task Items:** Personal task list
 - **Upcoming Reminders:** Scheduled alerts
 
-### 4. Projects
+### 5. Projects
 
 ![Projects List](screenshots/05-projects-list.png)
 
@@ -109,7 +151,7 @@ The dashboard provides an at-a-glance overview:
 - Cost per unit calculation
 - Recent activity feed
 
-### 5. Schedule Management
+### 6. Schedule Management
 
 ![Schedule Phases](screenshots/07-project-schedule.png)
 
@@ -130,7 +172,7 @@ The dashboard provides an at-a-glance overview:
 - Progress tracking with quantity-based completion (e.g., 6/10 foundations poured)
 - Inline editing and deletion
 
-### 6. Budget Management
+### 7. Budget Management
 
 ![Budget](screenshots/09-project-budget.png)
 
@@ -143,7 +185,7 @@ The dashboard provides an at-a-glance overview:
 - Filter by group, category, or phase
 - Analysis view for spending insights
 
-### 7. Contractor Management
+### 8. Contractor Management
 
 ![Contractors](screenshots/10-contractors.png)
 
@@ -155,7 +197,7 @@ The dashboard provides an at-a-glance overview:
 - Search and filter by specialty/status
 - Quick add/edit/delete actions
 
-### 8. AI Assistant (Jostin)
+### 9. AI Assistant (Jostin)
 
 ![AI Assistant](screenshots/11-ai-assistant.png)
 
@@ -167,7 +209,7 @@ The dashboard provides an at-a-glance overview:
 - Conversation history
 - Usage tracking with monthly limits
 
-### 9. Task Management
+### 10. Task Management
 
 ![Tasks](screenshots/12-tasks.png)
 
@@ -178,7 +220,7 @@ The dashboard provides an at-a-glance overview:
 - Due date tracking
 - Assignee management
 
-### 10. Team Management
+### 11. Team Management
 
 ![Team](screenshots/13-team.png)
 
@@ -221,17 +263,19 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 ### Database Schema
 
-- **30+ tables** covering all functionality
+- **40+ tables** covering all functionality
 - Multi-tenant isolation via `builder_id` on all tables
 - Soft deletes for data recovery
 - Full audit logging
+- Risk management tables: industry_benchmarks, budget_category_benchmarks, project_risk_metrics, risk_interventions, project_outcomes, builder_benchmarks
 
 ### API
 
-- **137 REST endpoints** across all resources
+- **150+ REST endpoints** across all resources
 - Zod schema validation on all inputs
 - Consistent error handling and response formats
 - Rate limiting per endpoint type
+- Risk API: dashboard, project risk details, interventions, recalculation
 
 ---
 
@@ -248,6 +292,7 @@ Frontend (Vercel)          Backend (Railway)           Storage
 | Phase 5 | Tasks & Notifications | Complete |
 | Phase 6 | Dashboard & Reports | Complete |
 | Phase 7 | AI Integration | Complete |
+| Phase 8 | Capital Risk Intelligence | Complete |
 
 ### Production Environment
 
@@ -290,7 +335,9 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 | Feature | HarvestIQ | Buildertrend | CoConstruct | Procore |
 |---------|-----------|--------------|-------------|---------|
+| **Capital Risk Intelligence** | Yes | No | No | No |
 | **AI Assistant** | Yes | No | No | Limited |
+| **Industry Benchmarks** | Yes | No | Limited | No |
 | **Price Point** | Affordable | $$$ | $$$ | $$$$ |
 | **Setup Time** | Minutes | Days | Days | Weeks |
 | **Learning Curve** | Low | Medium | Medium | High |
@@ -299,11 +346,13 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 ### Unique Selling Points
 
-1. **AI-Powered Insights:** Jostin provides intelligent analysis of budgets, schedules, and documents
-2. **Construction-Specific Templates:** Pre-built phases and budget categories for residential construction
-3. **Quantity-Based Progress:** Track completion by units (e.g., 6/10 foundations poured)
-4. **Clean, Modern Interface:** Built with latest web technologies
-5. **Affordable Pricing:** Designed for small/medium builders, not enterprise pricing
+1. **Capital Risk Intelligence:** Proactive risk identification with ranked interventions and capital impact analysis
+2. **AI-Powered Insights:** Jostin provides intelligent analysis of budgets, schedules, and documents
+3. **Industry Benchmarks:** Compare performance against NAHB/RSMeans standards, learn from your own completed projects
+4. **Construction-Specific Templates:** Pre-built phases and budget categories for residential construction
+5. **Quantity-Based Progress:** Track completion by units (e.g., 6/10 foundations poured)
+6. **Clean, Modern Interface:** Built with latest web technologies
+7. **Affordable Pricing:** Designed for small/medium builders, not enterprise pricing
 
 ---
 
@@ -347,9 +396,11 @@ Frontend (Vercel)          Backend (Railway)           Storage
 HarvestIQ is a **production-ready** construction management platform with comprehensive features covering the full lifecycle of residential construction projects. The core product is complete and deployed, with a clean architecture that can scale.
 
 **Strengths:**
+- Capital Risk Intelligence as the default landing page - answers "Where do I intervene to protect time and capital?"
 - Modern, intuitive UI
-- Complete feature set
-- AI-powered assistance
+- Complete feature set across 8 development phases
+- AI-powered assistance (Jostin)
+- Industry benchmarks with builder-specific learning
 - Multi-tenant architecture
 - Production deployed
 
