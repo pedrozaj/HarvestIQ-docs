@@ -286,6 +286,11 @@ HarvestIQ uses a multi-tenant architecture where each **Builder** (company) has 
 | start_date | DATE | Planned start date |
 | end_date | DATE | Planned end date |
 | description | TEXT | Project description |
+| purchase_price | DECIMAL(14,2) | Property purchase price per unit |
+| appraised_value | DECIMAL(14,2) | Current appraised value per unit |
+| target_arv | DECIMAL(14,2) | After Repair Value per unit (target) |
+| valuation_date | DATE | Date of most recent appraisal |
+| appraisal_document_id | UUID | FK to documents (appraisal doc) |
 | created_at | TIMESTAMPTZ | Creation timestamp |
 | updated_at | TIMESTAMPTZ | Last update timestamp |
 | deleted_at | TIMESTAMPTZ | Soft delete timestamp |

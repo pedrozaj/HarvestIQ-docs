@@ -350,3 +350,234 @@ Retry on failure (up to max_attempts)
 | `/settings/notifications` | Notification preferences |
 | `/team` | Team management (admin) |
 | `/ai` | AI chat interface |
+| `/capital-risk` | Capital exposure dashboard |
+| `/capital-risk/:projectId` | Project risk detail |
+
+---
+
+## Capital Risk Intelligence
+
+### Capital Exposure Dashboard (Default Landing Page)
+
+The Capital Exposure dashboard is the primary interface - the command center that answers: **"Where do I need to intervene right now to protect time and capital?"**
+
+#### Portfolio Summary
+- Total Capital at Risk across all active projects
+- Risk distribution breakdown (Critical, High, Medium, Low counts)
+- Portfolio Exposure Level with visual progress indicator
+- Unrealized Gain/Loss (current appraised vs target ARV)
+- Forecasted Gain/Loss (predicted vs target ARV)
+
+#### Project Risk Overview Table
+- All projects ranked by composite risk score
+- Schedule and budget risk scores with visual progress bars
+- Capital at risk per project
+- Trend indicators (improving, stable, worsening)
+- Quick issue badges (overdue tasks, blocked tasks, over budget)
+- Click to navigate to project risk detail
+
+#### Required Interventions Panel
+- Ranked list of actions requiring attention
+- Severity levels with color coding (Critical, High, Medium, Low)
+- Capital impact and days impact for each intervention
+- Entity links (to specific task, phase, or budget category)
+- One-click acknowledgment
+
+### Project Risk Detail Page
+
+#### Risk Score Gauges
+- Composite Risk Score (0-100) with risk level badge
+- Schedule Risk Score with breakdown
+- Budget Risk Score with breakdown
+- Capital at Risk amount
+- Trend indicator with velocity
+
+#### Property Valuation Forecast
+- Three-column overview: Target ARV, Current Appraised, Predicted at Completion
+- Per-unit and total values displayed
+- Variance calculations vs target
+- Generate AI Prediction button
+- AI prediction result with confidence level, reasoning, and market data
+- Apply prediction to project functionality
+
+#### Schedule Metrics
+- Overdue tasks count
+- Blocked tasks count
+- Phase delay (days)
+- Milestone slippage (days)
+- Schedule progress bar
+
+#### Budget Metrics
+- Budget variance percentage
+- Over-budget categories count
+- Burn rate deviation
+- Cost per unit vs benchmark variance
+
+#### Budget vs Industry Benchmarks Table
+- Category name
+- Actual spend amount
+- Actual percentage of total
+- Benchmark percentage (NAHB/RSMeans)
+- Variance from benchmark
+
+#### Project Interventions
+- All active interventions for this project
+- Severity, title, recommended action
+- Entity type and name (task, phase, category)
+- Acknowledge action
+
+---
+
+## Predictive ARV System
+
+### Property Valuation Fields
+
+Projects include the following valuation data:
+
+| Field | Description |
+|-------|-------------|
+| `purchase_price` | Total land/property purchase price (project-level) |
+| `appraised_value` | Current appraised value per unit |
+| `target_arv` | Target After Repair Value per unit (goal) |
+| `predicted_arv` | AI-predicted ARV per unit at project completion |
+| `valuation_date` | Date of most recent appraisal |
+| `appraisal_document_id` | Reference to uploaded appraisal document |
+
+### ARV Prediction Service
+
+AI-powered prediction using Claude API with market data integration.
+
+#### Inputs
+- Current appraised value per unit
+- Target ARV per unit
+- Project end date (months remaining)
+- Property address (for state-level market data)
+- Unit type and count
+
+#### Market Data Integration (FRED API)
+- Housing Price Index (HPI) data from Federal Reserve
+- State-level appreciation rates (all 50 states + DC)
+- National fallback when state unavailable
+- Calculates annual appreciation rate from historical data
+
+#### Prediction Output
+
+```typescript
+interface PredictionResult {
+  predictedArvPerUnit: number;
+  predictedArvTotal: number;
+  confidence: 'low' | 'medium' | 'high';
+  confidencePercent: number; // 0-100
+  reasoning: string; // 2-3 sentence explanation
+  factors: {
+    baseProjection: number; // Current × Growth × Time
+    marketAdjustment: number;
+    riskAdjustment: number;
+  };
+  marketData: {
+    region: string; // State abbreviation or 'US'
+    appreciationRate: number; // Annual rate as decimal
+    source: string; // 'FRED'
+  };
+  generatedAt: string; // ISO timestamp
+}
+```
+
+#### Prediction Workflow
+1. User clicks "Generate AI Prediction" button
+2. System fetches current appraised value and project data
+3. Market data service retrieves HPI from FRED API
+4. Claude API analyzes data and generates prediction
+5. User reviews prediction with confidence and reasoning
+6. User clicks "Apply to Project" to save prediction
+
+### Portfolio Valuation Totals
+
+The Capital Exposure dashboard aggregates valuations:
+- Total Purchase Price (sum of all projects)
+- Total Appraised Value (units × per-unit appraised)
+- Total Target ARV (units × per-unit target)
+- Total Predicted ARV (units × per-unit predicted)
+- Appraised Value for projects with predictions (for valid comparison)
+
+---
+
+## Risk Calculation System
+
+### Schedule Risk (0-100)
+
+Factors and weights:
+- Overdue tasks count and severity
+- Blocked tasks count
+- Phase delay (days behind schedule)
+- Milestone slippage (days)
+
+### Budget Risk (0-100)
+
+Factors and weights:
+- Budget variance percentage
+- Over-budget categories count
+- Burn rate deviation from plan
+- Cost per unit vs benchmark
+
+### Composite Risk Score
+
+Weighted combination of schedule and budget risk with trend modifiers.
+
+### Risk Levels
+
+| Level | Score Range | Color |
+|-------|-------------|-------|
+| Critical | >= 75 | Red |
+| High | >= 50 | Orange |
+| Medium | >= 25 | Yellow |
+| Low | < 25 | Green |
+
+### Trend Calculation
+
+Compares current composite score to previous calculation:
+- **Improving**: Score decreased
+- **Stable**: Score unchanged (within threshold)
+- **Worsening**: Score increased
+
+Trend velocity indicates rate of change.
+
+---
+
+## Intervention Types
+
+| Type | Trigger | Severity |
+|------|---------|----------|
+| `overdue_task` | Task past due date | Based on days overdue |
+| `blocked_task` | Task blocked by dependency | High |
+| `phase_delay` | Phase behind schedule | Based on delay days |
+| `milestone_slip` | Milestone missed | High/Critical |
+| `over_budget` | Category over budget | Based on variance % |
+| `burn_rate` | Spending faster than planned | Medium/High |
+| `cost_variance` | Cost per unit above benchmark | Based on variance |
+
+### Intervention Lifecycle
+
+1. **Active**: Generated by risk calculation
+2. **Acknowledged**: User clicked acknowledge
+3. **Resolved**: Issue fixed (detected on next calculation)
+4. **Expired**: Intervention aged out (7 days default)
+
+---
+
+## API Endpoints (Risk)
+
+```
+GET  /risk/dashboard                        - Get portfolio risk summary
+GET  /risk/projects/:id                     - Get project risk detail
+POST /risk/recalculate                      - Recalculate all project risks
+GET  /risk/interventions                    - List all active interventions
+POST /risk/interventions/:id/acknowledge    - Acknowledge intervention
+GET  /risk/benchmarks                       - Get industry benchmarks
+POST /risk/benchmarks/recalculate           - Recalculate builder benchmarks
+GET  /risk/portfolio                        - Get portfolio summary
+
+POST /projects/:id/predict-arv              - Generate ARV prediction
+  body: { save: boolean }
+  response: PredictionResult
+```

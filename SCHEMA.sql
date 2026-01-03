@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2025-12-28 08:28:03 UTC
+-- Generated: 2026-01-03 08:08:35 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 4qDazgFth81raX3qmnQRXixX3ys5dBsnj92PaLvQRn6YREAgF3EtRR502udeVks
+\restrict 54pPrd0une8aZaFv662jmaBSc5rGd7GHaUJenSCbnPyvCa3nh5bLoRx9zkL0lFf
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -630,7 +630,8 @@ CREATE TABLE public.documents (
     extracted_text text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    metadata jsonb DEFAULT '{}'::jsonb
 );
 
 
@@ -730,7 +731,8 @@ CREATE TABLE public.invoices (
     due_date date,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    budget_item_id uuid
 );
 
 
@@ -942,7 +944,13 @@ CREATE TABLE public.projects (
     description text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    purchase_price numeric(14,2),
+    appraised_value numeric(14,2),
+    target_arv numeric(14,2),
+    valuation_date date,
+    appraisal_document_id uuid,
+    predicted_arv numeric(14,2)
 );
 
 
@@ -1079,7 +1087,8 @@ CREATE TABLE public.schedule_tasks (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
     total_quantity integer DEFAULT 1 NOT NULL,
-    completed_quantity integer DEFAULT 0 NOT NULL
+    completed_quantity integer DEFAULT 0 NOT NULL,
+    duration_days integer
 );
 
 
@@ -2107,6 +2116,13 @@ CREATE INDEX idx_invitations_token ON public.invitations USING btree (token);
 
 
 --
+-- Name: idx_invoices_budget_item_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_invoices_budget_item_id ON public.invoices USING btree (budget_item_id);
+
+
+--
 -- Name: idx_invoices_builder_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2380,6 +2396,13 @@ CREATE INDEX idx_project_risk_metrics_risk_level ON public.project_risk_metrics 
 
 
 --
+-- Name: idx_projects_appraisal_document_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_appraisal_document_id ON public.projects USING btree (appraisal_document_id) WHERE (appraisal_document_id IS NOT NULL);
+
+
+--
 -- Name: idx_projects_builder_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2398,6 +2421,13 @@ CREATE INDEX idx_projects_created_at ON public.projects USING btree (created_at)
 --
 
 CREATE INDEX idx_projects_deleted_at ON public.projects USING btree (deleted_at);
+
+
+--
+-- Name: idx_projects_has_valuation; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_has_valuation ON public.projects USING btree (purchase_price) WHERE (purchase_price IS NOT NULL);
 
 
 --
@@ -3070,6 +3100,14 @@ ALTER TABLE ONLY public.invitations
 
 
 --
+-- Name: invoices invoices_budget_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invoices
+    ADD CONSTRAINT invoices_budget_item_id_fkey FOREIGN KEY (budget_item_id) REFERENCES public.budget_items(id);
+
+
+--
 -- Name: invoices invoices_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3275,6 +3313,14 @@ ALTER TABLE ONLY public.project_risk_metrics
 
 ALTER TABLE ONLY public.project_risk_metrics
     ADD CONSTRAINT project_risk_metrics_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
+-- Name: projects projects_appraisal_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT projects_appraisal_document_id_fkey FOREIGN KEY (appraisal_document_id) REFERENCES public.documents(id) ON DELETE SET NULL;
 
 
 --
@@ -3521,5 +3567,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 4qDazgFth81raX3qmnQRXixX3ys5dBsnj92PaLvQRn6YREAgF3EtRR502udeVks
+\unrestrict 54pPrd0une8aZaFv662jmaBSc5rGd7GHaUJenSCbnPyvCa3nh5bLoRx9zkL0lFf
 

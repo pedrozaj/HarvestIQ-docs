@@ -31,18 +31,18 @@ HarvestIQ is a full-featured, multi-tenant SaaS construction management platform
 | Feature | Description | Status |
 |---------|-------------|--------|
 | **Multi-Tenant Architecture** | Each builder company has isolated data with their own users, organizations, and projects | Complete |
-| **Capital Risk Dashboard** | Intelligence layer surfacing where time and money are at risk across the portfolio | Complete |
-| **Risk Interventions** | Ranked action items with recommended interventions and capital impact | Complete |
+| **Capital Exposure (Primary)** | Intelligence layer surfacing where time and money are at risk - the default landing page and command center | Complete |
+| **Required Interventions** | Ranked action items with recommended interventions and capital impact | Complete |
 | **Industry Benchmarks** | Compare project performance against NAHB/RSMeans industry standards | Complete |
-| **Project Management** | Create and manage multiple construction projects with status tracking | Complete |
-| **Schedule Management** | Phases, tasks, milestones, dependencies, and Gantt-style views | Complete |
-| **Budget Tracking** | Categories, line items, variance analysis, and cost-per-unit calculations | Complete |
-| **Contractor Management** | Track contractors, specialties, availability, and project assignments | Complete |
+| **Projects (Evidence)** | Track construction projects with status - evidence supporting risk analysis | Complete |
+| **Schedule (Evidence)** | Phases, tasks, milestones, dependencies - evidence for schedule risk | Complete |
+| **Budget (Evidence)** | Categories, line items, variance analysis - evidence for budget risk | Complete |
+| **Contractors (Resources)** | Track contractors, specialties, availability, and project assignments | Complete |
 | **Document Storage** | Upload and organize contracts, permits, blueprints via Cloudflare R2 | Complete |
-| **Task Management** | Personal task items with priorities, due dates, and assignments | Complete |
-| **Team Management** | Organizations, member roles (admin/manager/member/viewer), invitations | Complete |
-| **Reminders** | One-time and recurring reminders with notifications | Complete |
-| **AI Assistant (Jostin)** | Context-aware chat for project queries, budget analysis, schedule insights | Complete |
+| **Tasks (Evidence)** | Task items with priorities, due dates - evidence for intervention tracking | Complete |
+| **Team (Resources)** | Organizations, member roles (admin/manager/member/viewer), invitations | Complete |
+| **Alerts (Resources)** | One-time and recurring alerts with notifications | Complete |
+| **AI Assistant - Jostin (Resources)** | Context-aware chat for project queries, budget analysis, schedule insights | Complete |
 | **Activity Logging** | Full audit trail of all actions across the platform | Complete |
 | **Notifications** | In-app notifications with granular preferences | Complete |
 
@@ -81,14 +81,19 @@ The landing page showcases HarvestIQ's value proposition with:
 - Email verification flow
 - Password reset functionality
 
-### 3. Capital Risk (Default Landing Page)
+### 3. Capital Exposure (Default Landing Page / Command Center)
 
-The Capital Risk dashboard is the new default landing page, providing an intelligence layer that answers: **"Where do I need to intervene right now to protect time and capital?"**
+Capital Exposure is the primary interface and default landing page - the command center that answers: **"Where do I need to intervene right now to protect time and capital?"**
+
+**UI Philosophy:**
+- **Primary (Capital Exposure):** The command center where intervention happens
+- **Evidence (Projects, Schedule, Tasks):** Supporting data that explains the risk
+- **Resources (Contractors, Team, Alerts, Jostin):** Supporting operations
 
 **Portfolio Summary:**
 - Total Capital at Risk across all active projects
 - Risk distribution breakdown (Critical, High, Medium, Low)
-- Average portfolio risk score with trend indicator
+- Portfolio Exposure Level with visual indicator
 
 **Project Risk Overview Table:**
 - All projects ranked by composite risk score
@@ -97,8 +102,8 @@ The Capital Risk dashboard is the new default landing page, providing an intelli
 - Trend indicators (improving, stable, worsening)
 - Quick issue badges (overdue tasks, blocked tasks, over budget)
 
-**Top Interventions Panel:**
-- Ranked list of recommended actions
+**Required Interventions Panel:**
+- Ranked list of actions requiring attention
 - Severity levels with color coding
 - Capital and schedule impact for each intervention
 - One-click acknowledgment
@@ -107,7 +112,7 @@ The Capital Risk dashboard is the new default landing page, providing an intelli
 - Composite, schedule, and budget risk gauges
 - Detailed metrics (overdue tasks, phase delays, milestone slippage)
 - Budget vs industry benchmark comparison table
-- Active interventions for the project
+- Required interventions for the project
 
 **Risk Calculation System:**
 - Schedule Risk (0-100): Overdue tasks, blocked tasks, phase delays, milestone slippage
@@ -120,16 +125,24 @@ The Capital Risk dashboard is the new default landing page, providing an intelli
 - Budget category percentages from NAHB/RSMeans standards
 - Builder-specific learned benchmarks from completed projects
 
-### 4. Dashboard
+**Predictive ARV (After Repair Value):**
+- AI-powered property value prediction at project completion
+- Real-time market data from FRED API (Housing Price Index)
+- State-level and national appreciation rates
+- Confidence scoring with reasoning
+- Compare predicted ARV to target ARV
+- Portfolio-level forecasted gain/loss analysis
+
+### 4. Overview Dashboard (Secondary)
 
 ![Dashboard](screenshots/04-dashboard.png)
 
-The dashboard provides an at-a-glance overview:
+The overview dashboard provides supplementary metrics (accessible via `/dashboard` but removed from primary navigation in favor of Capital Exposure):
 - **Key Metrics:** Active projects, total budget, overdue tasks, upcoming milestones
 - **Project Cards:** Quick view of all projects with budget/schedule progress
 - **Recent Activity:** Live feed of team actions
 - **My Task Items:** Personal task list
-- **Upcoming Reminders:** Scheduled alerts
+- **Upcoming Alerts:** Scheduled notifications
 
 ### 5. Projects
 
@@ -263,11 +276,22 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 ### Database Schema
 
-- **40+ tables** covering all functionality
+- **45+ tables** covering all functionality
 - Multi-tenant isolation via `builder_id` on all tables
 - Soft deletes for data recovery
 - Full audit logging
 - Risk management tables: industry_benchmarks, budget_category_benchmarks, project_risk_metrics, risk_interventions, project_outcomes, builder_benchmarks
+- Property valuation fields: purchase_price, appraised_value, target_arv, predicted_arv, valuation_date
+
+### External Integrations
+
+| Service | Purpose |
+|---------|---------|
+| Claude API | AI-powered chat and ARV predictions |
+| FRED API | Housing Price Index market data |
+| OpenAI | Document embeddings for semantic search |
+| Resend | Transactional email |
+| Cloudflare R2 | Document storage |
 
 ### API
 
@@ -335,9 +359,12 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 | Feature | HarvestIQ | Buildertrend | CoConstruct | Procore |
 |---------|-----------|--------------|-------------|---------|
-| **Capital Risk Intelligence** | Yes | No | No | No |
+| **Capital Exposure Intelligence** | Yes | No | No | No |
+| **Intervention-First Design** | Yes | No | No | No |
+| **Predictive ARV Forecasting** | Yes | No | No | No |
 | **AI Assistant** | Yes | No | No | Limited |
 | **Industry Benchmarks** | Yes | No | Limited | No |
+| **Market Data Integration** | Yes | No | No | No |
 | **Price Point** | Affordable | $$$ | $$$ | $$$$ |
 | **Setup Time** | Minutes | Days | Days | Weeks |
 | **Learning Curve** | Low | Medium | Medium | High |
@@ -346,13 +373,16 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 ### Unique Selling Points
 
-1. **Capital Risk Intelligence:** Proactive risk identification with ranked interventions and capital impact analysis
-2. **AI-Powered Insights:** Jostin provides intelligent analysis of budgets, schedules, and documents
-3. **Industry Benchmarks:** Compare performance against NAHB/RSMeans standards, learn from your own completed projects
-4. **Construction-Specific Templates:** Pre-built phases and budget categories for residential construction
-5. **Quantity-Based Progress:** Track completion by units (e.g., 6/10 foundations poured)
-6. **Clean, Modern Interface:** Built with latest web technologies
-7. **Affordable Pricing:** Designed for small/medium builders, not enterprise pricing
+1. **Intervention-First Design:** Capital Exposure as the command center - not observation, but action
+2. **Capital Exposure Intelligence:** Proactive risk identification with ranked interventions and capital impact analysis
+3. **Predictive ARV Forecasting:** AI-powered property value predictions using real-time market data from FRED API, with confidence scoring and reasoning
+4. **AI-Powered Insights:** Jostin provides intelligent analysis of budgets, schedules, and documents
+5. **Industry Benchmarks:** Compare performance against NAHB/RSMeans standards, learn from your own completed projects
+6. **Market Data Integration:** Real-time Housing Price Index data for state-level and national appreciation rates
+7. **Construction-Specific Templates:** Pre-built phases and budget categories for residential construction
+8. **Quantity-Based Progress:** Track completion by units (e.g., 6/10 foundations poured)
+9. **Clean, Modern Interface:** Built with latest web technologies
+10. **Affordable Pricing:** Designed for small/medium builders, not enterprise pricing
 
 ---
 
@@ -393,11 +423,12 @@ Frontend (Vercel)          Backend (Railway)           Storage
 
 ## Conclusion
 
-HarvestIQ is a **production-ready** construction management platform with comprehensive features covering the full lifecycle of residential construction projects. The core product is complete and deployed, with a clean architecture that can scale.
+HarvestIQ is a **production-ready** construction intervention platform with comprehensive features covering the full lifecycle of residential construction projects. The core product is complete and deployed, with a clean architecture that can scale.
 
 **Strengths:**
-- Capital Risk Intelligence as the default landing page - answers "Where do I intervene to protect time and capital?"
-- Modern, intuitive UI
+- Capital Exposure as the command center - intervention-first design that answers "Where do I intervene to protect time and capital?"
+- Evidence-based architecture: Projects, Schedule, Tasks feed into risk analysis
+- Modern, intuitive UI with clear hierarchy (Primary → Evidence → Resources)
 - Complete feature set across 8 development phases
 - AI-powered assistance (Jostin)
 - Industry benchmarks with builder-specific learning

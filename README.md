@@ -4,7 +4,7 @@ This directory contains documentation for the HarvestIQ construction management 
 
 ## Project Overview
 
-HarvestIQ is a multi-tenant construction management platform that helps builders track expenses, manage contractors, and keep projects on schedule.
+HarvestIQ is a multi-tenant construction management platform that helps builders track expenses, manage contractors, keep projects on schedule, and proactively manage capital risk. The platform features AI-powered analytics including predictive ARV (After Repair Value) forecasting using real-time market data.
 
 ## Current Status
 
@@ -50,6 +50,16 @@ HarvestIQ is a multi-tenant construction management platform that helps builders
 - Schedule insights
 - Proactive insights generation
 - Usage tracking & limits
+
+### Phase 8: Capital Risk Intelligence
+- Capital Exposure dashboard (default landing page)
+- Portfolio-wide risk monitoring
+- Composite risk scoring (schedule + budget)
+- Required interventions system
+- Industry benchmarks (NAHB/RSMeans)
+- Predictive ARV forecasting
+- Market data integration (FRED API)
+- Property valuation tracking
 
 ## Architecture
 

@@ -1091,6 +1091,10 @@ Authorization: Bearer <token>
         "startDate": "2025-01-15",
         "endDate": "2025-12-31",
         "description": "24-unit apartment complex",
+        "purchasePrice": 150000,
+        "appraisedValue": 155000,
+        "targetArv": 200000,
+        "valuationDate": "2025-01-10",
         "createdAt": "2025-12-23T21:00:00.000Z",
         "updatedAt": "2025-12-23T21:00:00.000Z"
       }
@@ -1101,6 +1105,8 @@ Authorization: Bearer <token>
   }
 }
 ```
+
+**Note:** Valuation fields (`purchasePrice`, `appraisedValue`, `targetArv`) are per-unit values. Multiply by `units` to get project totals.
 
 ---
 
@@ -1125,9 +1131,15 @@ Content-Type: application/json
   "lotSizeAcres": 2.5,
   "startDate": "2025-01-15",
   "endDate": "2025-12-31",
-  "description": "24-unit apartment complex"
+  "description": "24-unit apartment complex",
+  "purchasePrice": 150000,
+  "appraisedValue": 155000,
+  "targetArv": 200000,
+  "valuationDate": "2025-01-10"
 }
 ```
+
+**Note:** Valuation fields are per-unit values. For a 24-unit project with $150K purchase price per unit, the total purchase price would be $3.6M.
 
 **Response (201 Created):**
 ```json
@@ -1479,12 +1491,33 @@ Content-Type: application/json
     "suggestedName": "Plumbing Invoice - March 2025",
     "suggestedType": "invoice",
     "suggestedDescription": "Invoice from ABC Plumbing for bathroom fixtures",
-    "confidence": 0.92
+    "confidence": 0.92,
+    "extractedAmount": 15250.00,
+    "extractedVendor": "ABC Plumbing",
+    "extractedInvoiceNumber": "INV-2025-0342"
   }
 }
 ```
 
-**Document Types:** `estimate`, `contract`, `permit`, `inspection`, `plan`, `invoice`, `receipt`, `photo`, `report`, `insurance`, `warranty`, `other`
+For appraisal documents, additional fields are extracted:
+```json
+{
+  "data": {
+    "suggestedName": "Property Appraisal - 123 Main St",
+    "suggestedType": "appraisal",
+    "suggestedDescription": "Appraisal report for multi-family property",
+    "confidence": 0.95,
+    "extractedPurchasePrice": 150000,
+    "extractedAppraisedValue": 155000,
+    "extractedTargetArv": 200000,
+    "extractedValuationDate": "2025-01-10"
+  }
+}
+```
+
+**Note:** Extracted valuation fields are per-unit values.
+
+**Document Types:** `estimate`, `contract`, `permit`, `inspection`, `plan`, `invoice`, `receipt`, `photo`, `report`, `insurance`, `warranty`, `appraisal`, `other`
 
 ---
 
@@ -2685,18 +2718,33 @@ Authorization: Bearer <token>
         "medium": 1,
         "high": 2,
         "critical": 0
-      }
+      },
+      "totalPurchasePrice": 3600000,
+      "totalAppraisedValue": 3720000,
+      "totalTargetArv": 4800000
     },
     "projectRisks": [
       {
-        "projectId": "uuid",
-        "projectName": "Riverside Apartments",
-        "compositeScore": 62,
-        "riskLevel": "high",
-        "capitalAtRisk": 75000,
-        "trend": "worsening",
-        "overdueTasksCount": 5,
-        "budgetVariancePercent": 12.5
+        "project": {
+          "id": "uuid",
+          "name": "Riverside Apartments",
+          "units": 24,
+          "unitType": "apartments",
+          "purchasePricePerUnit": 150000,
+          "appraisedValuePerUnit": 155000,
+          "targetArvPerUnit": 200000,
+          "purchasePrice": 3600000,
+          "appraisedValue": 3720000,
+          "targetArv": 4800000
+        },
+        "metrics": {
+          "compositeScore": 62,
+          "riskLevel": "high",
+          "capitalAtRisk": 75000,
+          "trend": "worsening",
+          "overdueTasksCount": 5,
+          "budgetVariancePercent": 12.5
+        }
       }
     ],
     "topInterventions": [
