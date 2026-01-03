@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2026-01-03 08:08:35 UTC
+-- Generated: 2026-01-03 10:26:58 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 54pPrd0une8aZaFv662jmaBSc5rGd7GHaUJenSCbnPyvCa3nh5bLoRx9zkL0lFf
+\restrict K8BslgtZUu0Yo0sEp8lm9nugwQPXvXWIf2jXnOIKSmg0tVpwRBJwmTMtLpZrqtX
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -1653,14 +1653,6 @@ ALTER TABLE ONLY public.industry_benchmarks
 
 
 --
--- Name: invitations uq_invitations_org_email; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.invitations
-    ADD CONSTRAINT uq_invitations_org_email UNIQUE (organization_id, email);
-
-
---
 -- Name: notification_preferences uq_notification_prefs; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2711,6 +2703,13 @@ CREATE INDEX idx_users_password_reset_token ON public.users USING btree (passwor
 
 
 --
+-- Name: uq_invitations_org_email_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_invitations_org_email_active ON public.invitations USING btree (organization_id, email) WHERE (deleted_at IS NULL);
+
+
+--
 -- Name: job_common_pkey; Type: INDEX ATTACH; Schema: pgboss; Owner: -
 --
 
@@ -3567,5 +3566,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 54pPrd0une8aZaFv662jmaBSc5rGd7GHaUJenSCbnPyvCa3nh5bLoRx9zkL0lFf
+\unrestrict K8BslgtZUu0Yo0sEp8lm9nugwQPXvXWIf2jXnOIKSmg0tVpwRBJwmTMtLpZrqtX
 

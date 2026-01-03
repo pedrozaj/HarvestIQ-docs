@@ -325,6 +325,54 @@ HarvestIQ uses a multi-tenant architecture where each **Builder** (company) has 
 | created_at | TIMESTAMPTZ | Creation timestamp |
 | deleted_at | TIMESTAMPTZ | Soft delete timestamp |
 
+## Invited User Access Pattern
+
+When users are invited to an organization, they have a **different `builder_id`** than the organization they're joining. This requires special handling in all controllers:
+
+### The Problem
+- User A creates an account → gets `builder_id: AAA`
+- User A creates Organization X (under builder AAA)
+- User A invites User B to Organization X
+- User B registers → gets `builder_id: BBB` (their own tenant)
+- User B joins Organization X (which belongs to builder AAA)
+
+If controllers query by `user.builderId`, User B sees nothing because Organization X's data is under builder AAA.
+
+### The Solution
+
+All project-related controllers follow this pattern:
+
+```typescript
+// WRONG: Uses user's builder_id (fails for invited users)
+const project = await projectModel.findById(projectId, builderId);
+
+// CORRECT: Check org membership regardless of builder_id
+const project = await projectModel.findByIdForUser(projectId, userId);
+// Then use project.builder_id for subsequent queries
+const items = await budgetItemModel.findByProject(project.builder_id, projectId);
+```
+
+### Key Functions
+
+| Function | Purpose |
+|----------|---------|
+| `projectModel.findByIdForUser(projectId, userId)` | Gets project if user is member of its organization |
+| `organizationMemberModel.findMembershipByOrgAndUser(orgId, userId)` | Finds membership without requiring builderId |
+
+### Controllers Using This Pattern
+
+All project-scoped controllers use this pattern:
+- `project.controller.ts`
+- `schedulePhase.controller.ts`
+- `scheduleMilestone.controller.ts`
+- `scheduleTask.controller.ts`
+- `budgetItem.controller.ts`
+- `budgetCategory.controller.ts` (accepts `projectId` query param)
+- `document.controller.ts`
+- `payment.controller.ts`
+- `projectContractor.controller.ts`
+- `risk.controller.ts`
+
 ## Data Flow
 
 ### 1. Registration Flow
