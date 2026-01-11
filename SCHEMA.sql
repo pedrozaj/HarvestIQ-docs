@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2026-01-06 04:54:26 UTC
+-- Generated: 2026-01-11 05:11:03 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict IDh1ICAg1ZnA9HpoTFU2Op61KdwJLoREPoDU4tQBvuyNjB2jfvPaddHbhVGbwOV
+\restrict rUCRxK0nmk6tgoHhi6nzvsKy8gXCDX9cm0qFHsgAPFu4v1Urq29oy9kgN5uBKWj
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -517,6 +517,7 @@ CREATE TABLE public.budget_items (
     deleted_at timestamp with time zone,
     total_quantity integer DEFAULT 1 NOT NULL,
     completed_quantity integer DEFAULT 0 NOT NULL,
+    is_purchased boolean DEFAULT false NOT NULL,
     CONSTRAINT completed_lte_total CHECK ((completed_quantity <= total_quantity))
 );
 
@@ -950,7 +951,8 @@ CREATE TABLE public.projects (
     target_arv numeric(14,2),
     valuation_date date,
     appraisal_document_id uuid,
-    predicted_arv numeric(14,2)
+    predicted_arv numeric(14,2),
+    material_inflation_rate numeric(5,4) DEFAULT 0.05 NOT NULL
 );
 
 
@@ -1930,6 +1932,13 @@ CREATE INDEX idx_budget_category_benchmarks_unit_type ON public.budget_category_
 --
 
 CREATE INDEX idx_budget_items_category_id ON public.budget_items USING btree (category_id);
+
+
+--
+-- Name: idx_budget_items_is_purchased; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_budget_items_is_purchased ON public.budget_items USING btree (project_id, is_purchased) WHERE (deleted_at IS NULL);
 
 
 --
@@ -3566,5 +3575,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict IDh1ICAg1ZnA9HpoTFU2Op61KdwJLoREPoDU4tQBvuyNjB2jfvPaddHbhVGbwOV
+\unrestrict rUCRxK0nmk6tgoHhi6nzvsKy8gXCDX9cm0qFHsgAPFu4v1Urq29oy9kgN5uBKWj
 
