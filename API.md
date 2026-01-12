@@ -1906,7 +1906,6 @@ Authorization: Bearer <token>
 | phaseId | uuid | Filter by phase |
 | status | string | Filter by status: `not_started`, `in_progress`, `completed`, `blocked` |
 | assignedTo | uuid | Filter by assigned user |
-| priority | string | Filter by priority: `low`, `medium`, `high`, `urgent` |
 | limit | number | Results per page (default: 20, max: 100) |
 | offset | number | Pagination offset |
 
@@ -1922,15 +1921,15 @@ Authorization: Bearer <token>
         "name": "Pour footings",
         "description": "Pour concrete footings",
         "status": "not_started",
-        "priority": "high",
         "assignedTo": "uuid",
         "assigneeName": "John Smith",
         "plannedStartDate": "2025-01-20",
         "plannedEndDate": "2025-01-22",
         "actualStartDate": null,
         "actualEndDate": null,
-        "estimatedHours": 16,
         "actualHours": null,
+        "predecessorTaskId": "uuid",
+        "predecessorTaskName": "Excavate foundation",
         "createdAt": "2025-12-23T21:00:00.000Z",
         "updatedAt": "2025-12-23T21:00:00.000Z"
       }
@@ -1957,12 +1956,13 @@ Content-Type: application/json
   "name": "Pour footings",
   "description": "Pour concrete footings",
   "assignedTo": "uuid",
-  "priority": "high",
   "plannedStartDate": "2025-01-20",
   "plannedEndDate": "2025-01-22",
-  "estimatedHours": 16
+  "predecessorTaskId": "uuid"
 }
 ```
+
+> **Note:** If `predecessorTaskId` is set, the task's `plannedStartDate` will be automatically calculated based on the predecessor's end date.
 
 **Response (201 Created):**
 ```json
@@ -1996,14 +1996,8 @@ Authorization: Bearer <token>
     "name": "Pour footings",
     "description": "Pour concrete footings",
     "status": "not_started",
-    "priority": "high",
-    "dependencies": [
-      {
-        "id": "uuid",
-        "dependsOnTaskId": "uuid",
-        "dependsOnTaskName": "Excavate foundation"
-      }
-    ],
+    "predecessorTaskId": "uuid",
+    "predecessorTaskName": "Excavate foundation",
     ...
   }
 }
@@ -2029,7 +2023,6 @@ Content-Type: application/json
 ```
 
 **Status Values:** `not_started`, `in_progress`, `completed`, `blocked`
-**Priority Values:** `low`, `medium`, `high`, `urgent`
 
 **Response (200 OK):**
 ```json
@@ -2062,59 +2055,6 @@ Authorization: Bearer <token>
 
 ---
 
-### Add Task Dependency
-
-```
-POST /api/projects/:id/tasks/:taskId/dependencies
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "dependsOnTaskId": "uuid"
-}
-```
-
-**Response (201 Created):**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "taskId": "uuid",
-    "dependsOnTaskId": "uuid"
-  }
-}
-```
-
-**Errors:**
-| Code | Status | Message |
-|------|--------|---------|
-| RES_4001 | 404 | Task not found |
-| RES_4002 | 409 | Dependency already exists |
-| BIZ_5005 | 400 | Cannot create circular dependency |
-
----
-
-### Remove Task Dependency
-
-```
-DELETE /api/projects/:id/tasks/:taskId/dependencies/:depId
-Authorization: Bearer <token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "data": {
-    "message": "Dependency removed"
-  }
-}
-```
-
----
-
 ## Schedule Milestone Endpoints
 
 Schedule milestones are nested under projects: `/api/projects/:id/milestones`.
@@ -2134,17 +2074,29 @@ Authorization: Bearer <token>
       "id": "uuid",
       "projectId": "uuid",
       "phaseId": "uuid",
+      "taskId": "uuid",
       "name": "Foundation Complete",
       "description": "All foundation work completed",
       "targetDate": "2025-02-15",
       "actualDate": null,
       "status": "upcoming",
+      "isAutoStatus": true,
+      "linkedTask": {
+        "id": "uuid",
+        "name": "Pour foundation",
+        "status": "in_progress"
+      },
       "createdAt": "2025-12-23T21:00:00.000Z",
       "updatedAt": "2025-12-23T21:00:00.000Z"
     }
   ]
 }
 ```
+
+> **Note:** When `taskId` is set, `isAutoStatus` is true and the milestone status is auto-calculated:
+> - `achieved` if the linked task is completed
+> - `missed` if past target date and task not completed
+> - `upcoming` otherwise
 
 ---
 
@@ -2161,10 +2113,13 @@ Content-Type: application/json
 {
   "name": "Foundation Complete",
   "phaseId": "uuid",
+  "taskId": "uuid",
   "targetDate": "2025-02-15",
   "description": "All foundation work completed"
 }
 ```
+
+> **Note:** If `taskId` is provided without `targetDate`, the target date defaults to the task's planned end date.
 
 **Response (201 Created):**
 ```json
@@ -2191,12 +2146,15 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
+  "taskId": "uuid",
   "status": "achieved",
   "actualDate": "2025-02-14"
 }
 ```
 
 **Status Values:** `upcoming`, `achieved`, `missed`
+
+> **Note:** Setting `taskId` to `null` unlinks the milestone from a task, allowing manual status control. When linked to a task, the `status` field is ignored as it's auto-calculated.
 
 **Response (200 OK):**
 ```json
