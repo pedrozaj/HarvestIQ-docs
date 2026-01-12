@@ -1962,8 +1962,6 @@ Content-Type: application/json
 }
 ```
 
-> **Note:** If `predecessorTaskId` is set, the task's `plannedStartDate` will be automatically calculated based on the predecessor's end date.
-
 **Response (201 Created):**
 ```json
 {
@@ -2093,11 +2091,6 @@ Authorization: Bearer <token>
 }
 ```
 
-> **Note:** When `taskId` is set, `isAutoStatus` is true and the milestone status is auto-calculated:
-> - `achieved` if the linked task is completed
-> - `missed` if past target date and task not completed
-> - `upcoming` otherwise
-
 ---
 
 ### Create Milestone
@@ -2118,8 +2111,6 @@ Content-Type: application/json
   "description": "All foundation work completed"
 }
 ```
-
-> **Note:** If `taskId` is provided without `targetDate`, the target date defaults to the task's planned end date.
 
 **Response (201 Created):**
 ```json
@@ -2153,8 +2144,6 @@ Content-Type: application/json
 ```
 
 **Status Values:** `upcoming`, `achieved`, `missed`
-
-> **Note:** Setting `taskId` to `null` unlinks the milestone from a task, allowing manual status control. When linked to a task, the `status` field is ignored as it's auto-calculated.
 
 **Response (200 OK):**
 ```json
