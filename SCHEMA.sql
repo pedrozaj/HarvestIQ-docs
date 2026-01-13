@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2026-01-12 23:49:45 UTC
+-- Generated: 2026-01-13 01:19:41 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict kRVsGut8SbpzKsqyensVYFvxqCyqPiSaBDfAXuZ3JtjWDj38bbc4ySZAa586nq7
+\restrict T2mATc5PSLalaxWGP0snB97108aCLfnMOBG7OMJNTC4N1UzwdjIQ2ssYJALGZWF
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -1041,7 +1041,8 @@ CREATE TABLE public.schedule_milestones (
     status character varying(50) DEFAULT 'upcoming'::character varying NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    task_id uuid
 );
 
 
@@ -1078,19 +1079,18 @@ CREATE TABLE public.schedule_tasks (
     description text,
     assigned_to uuid,
     status character varying(50) DEFAULT 'not_started'::character varying NOT NULL,
-    priority character varying(20) DEFAULT 'medium'::character varying NOT NULL,
     planned_start_date date,
     planned_end_date date,
     actual_start_date date,
     actual_end_date date,
-    estimated_hours numeric(10,2),
     actual_hours numeric(10,2),
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
     total_quantity integer DEFAULT 1 NOT NULL,
     completed_quantity integer DEFAULT 0 NOT NULL,
-    duration_days integer
+    duration_days integer,
+    predecessor_task_id uuid
 );
 
 
@@ -2572,6 +2572,13 @@ CREATE INDEX idx_schedule_milestones_target_date ON public.schedule_milestones U
 
 
 --
+-- Name: idx_schedule_milestones_task_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_schedule_milestones_task_id ON public.schedule_milestones USING btree (task_id);
+
+
+--
 -- Name: idx_schedule_phases_builder_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2597,6 +2604,13 @@ CREATE INDEX idx_schedule_tasks_assigned_to ON public.schedule_tasks USING btree
 --
 
 CREATE INDEX idx_schedule_tasks_phase_id ON public.schedule_tasks USING btree (phase_id);
+
+
+--
+-- Name: idx_schedule_tasks_predecessor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_schedule_tasks_predecessor ON public.schedule_tasks USING btree (predecessor_task_id);
 
 
 --
@@ -3444,6 +3458,14 @@ ALTER TABLE ONLY public.schedule_milestones
 
 
 --
+-- Name: schedule_milestones schedule_milestones_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedule_milestones
+    ADD CONSTRAINT schedule_milestones_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.schedule_tasks(id) ON DELETE SET NULL;
+
+
+--
 -- Name: schedule_phases schedule_phases_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3481,6 +3503,14 @@ ALTER TABLE ONLY public.schedule_tasks
 
 ALTER TABLE ONLY public.schedule_tasks
     ADD CONSTRAINT schedule_tasks_phase_id_fkey FOREIGN KEY (phase_id) REFERENCES public.schedule_phases(id) ON DELETE CASCADE;
+
+
+--
+-- Name: schedule_tasks schedule_tasks_predecessor_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedule_tasks
+    ADD CONSTRAINT schedule_tasks_predecessor_task_id_fkey FOREIGN KEY (predecessor_task_id) REFERENCES public.schedule_tasks(id) ON DELETE SET NULL;
 
 
 --
@@ -3575,5 +3605,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict kRVsGut8SbpzKsqyensVYFvxqCyqPiSaBDfAXuZ3JtjWDj38bbc4ySZAa586nq7
+\unrestrict T2mATc5PSLalaxWGP0snB97108aCLfnMOBG7OMJNTC4N1UzwdjIQ2ssYJALGZWF
 
