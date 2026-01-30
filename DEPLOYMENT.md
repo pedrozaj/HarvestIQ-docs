@@ -42,8 +42,10 @@ vercel --prod
 
 ## Backend Deployment (Railway)
 
+Railway hosts three services: **HarvestIQ-backend** (API server), **HarvestIQ-worker** (background job processor), and **Postgres** (database).
+
 ### Automatic Deployment
-Push to GitHub and Railway automatically deploys:
+Push to GitHub and Railway automatically deploys both backend and worker:
 
 ```bash
 cd HarvestIQ-backend
@@ -75,27 +77,6 @@ railway link -p 1e5eb883-85fd-4867-8603-050dbb3fd6f1
 railway status
 ```
 
-#### Environment Variables
-```bash
-# List all environment variables
-railway variables
-
-# Add a variable
-railway variables set KEY=value
-
-# Current backend variables:
-# - DATABASE_URL (auto-linked from PostgreSQL service)
-# - R2_ACCOUNT_ID
-# - R2_ACCESS_KEY_ID
-# - R2_SECRET_ACCESS_KEY
-# - R2_BUCKET_NAME
-# - ANTHROPIC_API_KEY (for AI assistant - Claude)
-# - OPENAI_API_KEY (for embeddings)
-# - RESEND_API_KEY (for transactional emails)
-# - JWT_SECRET (for authentication)
-# - FRONTEND_URL (for CORS)
-```
-
 #### Deployment
 ```bash
 # Deploy current directory
@@ -107,6 +88,55 @@ railway logs
 
 ### Railway Dashboard
 - URL: https://railway.com/project/1e5eb883-85fd-4867-8603-050dbb3fd6f1
+
+### Environment Variables
+
+Both the backend and worker services require environment variables. When adding a new variable, ensure it is added to **both services** if needed.
+
+#### HarvestIQ-backend (API Server)
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection (auto-linked) |
+| `JWT_SECRET` | Authentication token signing |
+| `JWT_ACCESS_EXPIRY` | Access token lifetime (default: 15m) |
+| `JWT_REFRESH_EXPIRY` | Refresh token lifetime (default: 7d) |
+| `NODE_ENV` | Environment (production) |
+| `FRONTEND_URL` | Frontend URL for CORS and email links |
+| `RESEND_API_KEY` | Resend email API key |
+| `EMAIL_FROM` | From address for outbound emails |
+| `EMAIL_INBOUND_DOMAIN` | Domain for inbound email parsing |
+| `ANTHROPIC_API_KEY` | Claude API for AI features |
+| `OPENAI_API_KEY` | OpenAI API for embeddings |
+| `FRED_API_KEY` | FRED API for housing data |
+| `R2_ACCOUNT_ID` | Cloudflare R2 account |
+| `R2_ACCESS_KEY_ID` | R2 access key |
+| `R2_SECRET_ACCESS_KEY` | R2 secret key |
+| `R2_BUCKET_NAME` | R2 bucket name |
+| `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Puppeteer config |
+
+#### HarvestIQ-worker (Background Jobs)
+
+The worker processes inbound emails, sends reply confirmations, and runs background tasks. It needs most of the same variables as the backend.
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection (auto-linked) |
+| `JWT_SECRET` | Shared with backend for token validation |
+| `NODE_ENV` | Environment (production) |
+| `FRONTEND_URL` | Used in email links (e.g., "View in HarvestIQ") |
+| `RESEND_API_KEY` | Sends reply confirmation emails |
+| `EMAIL_FROM` | From address on reply emails |
+| `EMAIL_INBOUND_DOMAIN` | Domain for reply-to addresses |
+| `ANTHROPIC_API_KEY` | AI classification of inbound emails |
+| `OPENAI_API_KEY` | Embeddings for document search |
+| `R2_ACCOUNT_ID` | Stores email attachments/PDFs |
+| `R2_ACCESS_KEY_ID` | R2 access key |
+| `R2_SECRET_ACCESS_KEY` | R2 secret key |
+| `R2_BUCKET_NAME` | R2 bucket name |
+| `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` | Puppeteer config |
+
+> **Important:** If a variable is missing from the worker, it falls back to code defaults (e.g., `FRONTEND_URL` defaults to `http://localhost:3000`), which causes incorrect links in emails sent from the worker.
 
 ---
 

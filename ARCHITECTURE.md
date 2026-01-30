@@ -461,25 +461,59 @@ Located in `src/utils/budgetTemplates.ts`:
 ## Infrastructure
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         HarvestIQ System                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────┐     ┌─────────────────┐     ┌───────────┐ │
-│  │    Frontend     │────▶│   Backend API   │────▶│ PostgreSQL│ │
-│  │    (Vercel)     │     │   (Railway)     │     │ (Railway) │ │
-│  │   Next.js 15    │     │  Express 5 + TS │     │           │ │
-│  └─────────────────┘     └────────┬────────┘     └───────────┘ │
-│                                   │                             │
-│                          ┌────────┴────────┐                    │
-│                          │                 │                    │
-│                          ▼                 ▼                    │
-│                 ┌─────────────────┐ ┌─────────────────┐         │
-│                 │   Cloudflare    │ │     Resend      │         │
-│                 │   R2 Storage    │ │  (Email API)    │         │
-│                 └─────────────────┘ └─────────────────┘         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                          HarvestIQ System                            │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────────┐     ┌─────────────────┐     ┌───────────────┐  │
+│  │    Frontend     │────▶│   Backend API   │────▶│   PostgreSQL  │  │
+│  │    (Vercel)     │     │   (Railway)     │     │   (Railway)   │  │
+│  │   Next.js 15    │     │  Express 5 + TS │     │               │  │
+│  └─────────────────┘     └────────┬────────┘     └───────┬───────┘  │
+│                                   │                      │          │
+│                          ┌────────┼────────┐             │          │
+│                          │        │        │             │          │
+│                          ▼        ▼        ▼             │          │
+│                 ┌──────────┐ ┌────────┐ ┌────────┐       │          │
+│                 │Cloudflare│ │ Resend │ │SendGrid│       │          │
+│                 │R2 Storage│ │(Email) │ │(Inbound│       │          │
+│                 └──────────┘ └────────┘ │ Parse) │       │          │
+│                                         └───┬────┘       │          │
+│                                             │            │          │
+│                                             ▼            │          │
+│                                    ┌─────────────────┐   │          │
+│                                    │  Worker Service  │───┘          │
+│                                    │  (Railway)       │              │
+│                                    │  Background Jobs │──▶ Resend    │
+│                                    └─────────────────┘   (replies)  │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Railway Services
+
+| Service | Purpose |
+|---------|---------|
+| **HarvestIQ-backend** | API server handling all HTTP requests |
+| **HarvestIQ-worker** | Background job processor for email processing, PDF conversion, AI classification |
+| **Postgres** | PostgreSQL database with attached volume |
+
+### Email Processing Flow
+
+```
+External email → SendGrid Inbound Parse → POST /api/webhooks/email/inbound
+                                                    ↓
+                                          Backend validates sender
+                                          Creates email_action record
+                                          Queues job for worker
+                                                    ↓
+                                          Worker picks up job
+                                          AI classifies email intent
+                                          Parses and executes actions
+                                          (add invoice, payment, etc.)
+                                                    ↓
+                                          Worker sends reply via Resend
+                                          (reply-to = project email address)
 ```
 
 ## Security
