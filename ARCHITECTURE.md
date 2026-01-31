@@ -516,6 +516,28 @@ External email → SendGrid Inbound Parse → POST /api/webhooks/email/inbound
                                           (reply-to = project email address)
 ```
 
+### Email Correction Threading
+
+When a user replies to correct an action (e.g., "change document type to invoice"), the system matches the reply back to the original email using two strategies:
+
+1. **In-Reply-To matching**: Checks `reply_message_id` on the original email action (with bracket normalization)
+2. **References header fallback**: Since Amazon SES overrides outbound `Message-ID` headers, `In-Reply-To` often contains an unknown SES ID. The fallback extracts all Message-IDs from the `References` header and matches them against stored `message_id` values on email actions that had replies sent.
+
+The `references_header` column on `email_actions` stores the raw References header for this purpose.
+
+### Jostin AI Email Interface
+
+```
+User emails jostinai@parse.harvestiq.thex1.com
+  → SendGrid Parse webhook (same endpoint)
+  → Webhook detects "jostinai" prefix → branches to handleJostinAiEmail()
+  → Looks up sender → gets builderId/userId
+  → Finds or creates AI conversation (threaded via In-Reply-To → jostin_email_threads)
+  → Runs AI pipeline (classify → extract → query → RAG → generate)
+  → Sends formatted HTML reply via Resend
+  → Stores outbound Message-ID for threading follow-up replies
+```
+
 ## Security
 
 ### Authentication

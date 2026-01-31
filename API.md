@@ -2343,6 +2343,19 @@ Authorization: Bearer <token>
 
 ---
 
+## Jostin AI Email Interface
+
+**Email Address:** `jostinai@parse.harvestiq.thex1.com`
+
+Users can email questions to Jostin AI and receive AI-powered responses about their projects, budgets, schedules, and documents. No API call needed — just send an email.
+
+- **Sender must be a registered user** (looked up by email address)
+- **Threading**: Reply to a Jostin response to continue the same AI conversation
+- **Thread tracking**: `jostin_email_threads` table maps email Message-IDs to `ai_conversations`
+- **Routing**: SendGrid Inbound Parse webhook detects the `jostinai` prefix and branches to the AI pipeline instead of the project email flow
+
+---
+
 ## AI Integration
 
 All AI endpoints are prefixed with `/api/ai` and require authentication.
