@@ -100,7 +100,7 @@ Both the backend and worker services require environment variables. When adding 
 | `DATABASE_URL` | PostgreSQL connection (auto-linked) |
 | `JWT_SECRET` | Authentication token signing |
 | `JWT_ACCESS_EXPIRY` | Access token lifetime (default: 15m) |
-| `JWT_REFRESH_EXPIRY` | Refresh token lifetime (default: 7d) |
+| `JWT_REFRESH_EXPIRY` | Refresh token lifetime (default: 90d) |
 | `NODE_ENV` | Environment (production) |
 | `FRONTEND_URL` | Frontend URL for CORS and email links |
 | `RESEND_API_KEY` | Resend email API key |
