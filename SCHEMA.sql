@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HarvestIQ Database Schema
--- Generated: 2026-03-13 22:12:17 UTC
+-- Generated: 2026-11-13 00:08:36 UTC
 -- Source: Production PostgreSQL database via pg_dump
 -- 
 -- DO NOT EDIT MANUALLY
@@ -11,7 +11,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6OYLeRNZ7DtIj8RhMtFzmGs7qGkVivx5O7af076VBlbo1AdLkCgQIHk5lrA2FtB
+\restrict bDTWE7BGEE51LfNTOew85n9i7yDKXVdQOd9rY7ZFJKIL8VFUZ7TLy2TwmWU35at
 
 -- Dumped from database version 17.7 (Debian 17.7-3.pgdg13+1)
 -- Dumped by pg_dump version 18.1
@@ -634,6 +634,21 @@ CREATE TABLE public.contractors (
 
 
 --
+-- Name: document_analysis_cache; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.document_analysis_cache (
+    builder_id uuid NOT NULL,
+    content_hash text NOT NULL,
+    model text NOT NULL,
+    analysis jsonb NOT NULL,
+    hit_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_hit_at timestamp with time zone
+);
+
+
+--
 -- Name: document_embeddings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -811,7 +826,8 @@ CREATE TABLE public.invitations (
     expires_at timestamp with time zone NOT NULL,
     accepted_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    project_id uuid
 );
 
 
@@ -835,7 +851,8 @@ CREATE TABLE public.invoices (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    budget_item_id uuid
+    budget_item_id uuid,
+    source_ref text
 );
 
 
@@ -851,6 +868,41 @@ CREATE TABLE public.jostin_email_threads (
     last_email_message_id text,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now()
+);
+
+
+--
+-- Name: ledger_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ledger_entries (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    ledger_name character varying(50) NOT NULL,
+    entry_date date NOT NULL,
+    description text NOT NULL,
+    entry_type character varying(50) NOT NULL,
+    amount numeric(12,2) NOT NULL,
+    partner character varying(50) NOT NULL,
+    paid_to character varying(50),
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    deleted_at timestamp with time zone,
+    vendor character varying(200)
+);
+
+
+--
+-- Name: ledger_history; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ledger_history (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    ledger_name character varying(50) NOT NULL,
+    entry_id uuid,
+    action character varying(20) NOT NULL,
+    original_data jsonb NOT NULL,
+    updated_data jsonb,
+    created_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -922,7 +974,8 @@ CREATE TABLE public.organization_members (
     joined_at timestamp with time zone,
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    project_id uuid
 );
 
 
@@ -1532,6 +1585,14 @@ ALTER TABLE ONLY public.contractors
 
 
 --
+-- Name: document_analysis_cache document_analysis_cache_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_analysis_cache
+    ADD CONSTRAINT document_analysis_cache_pkey PRIMARY KEY (builder_id, content_hash);
+
+
+--
 -- Name: document_embeddings document_embeddings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1617,6 +1678,22 @@ ALTER TABLE ONLY public.invoices
 
 ALTER TABLE ONLY public.jostin_email_threads
     ADD CONSTRAINT jostin_email_threads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ledger_entries ledger_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ledger_entries
+    ADD CONSTRAINT ledger_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ledger_history ledger_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ledger_history
+    ADD CONSTRAINT ledger_history_pkey PRIMARY KEY (id);
 
 
 --
@@ -1833,14 +1910,6 @@ ALTER TABLE ONLY public.industry_benchmarks
 
 ALTER TABLE ONLY public.notification_preferences
     ADD CONSTRAINT uq_notification_prefs UNIQUE (user_id, notification_type);
-
-
---
--- Name: organization_members uq_org_members_user_org; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.organization_members
-    ADD CONSTRAINT uq_org_members_user_org UNIQUE (organization_id, user_id);
 
 
 --
@@ -2458,6 +2527,13 @@ CREATE INDEX idx_invitations_expires_at ON public.invitations USING btree (expir
 
 
 --
+-- Name: idx_invitations_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_invitations_project_id ON public.invitations USING btree (project_id) WHERE (project_id IS NOT NULL);
+
+
+--
 -- Name: idx_invitations_token; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2507,6 +2583,13 @@ CREATE INDEX idx_invoices_project_id ON public.invoices USING btree (project_id)
 
 
 --
+-- Name: idx_invoices_project_source_ref; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_invoices_project_source_ref ON public.invoices USING btree (project_id, source_ref) WHERE ((source_ref IS NOT NULL) AND (deleted_at IS NULL));
+
+
+--
 -- Name: idx_invoices_status; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2525,6 +2608,41 @@ CREATE UNIQUE INDEX idx_jostin_threads_conversation ON public.jostin_email_threa
 --
 
 CREATE INDEX idx_jostin_threads_message_id ON public.jostin_email_threads USING btree (last_email_message_id);
+
+
+--
+-- Name: idx_ledger_entries_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ledger_entries_active ON public.ledger_entries USING btree (deleted_at) WHERE (deleted_at IS NULL);
+
+
+--
+-- Name: idx_ledger_entries_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ledger_entries_date ON public.ledger_entries USING btree (entry_date);
+
+
+--
+-- Name: idx_ledger_entries_ledger; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ledger_entries_ledger ON public.ledger_entries USING btree (ledger_name);
+
+
+--
+-- Name: idx_ledger_history_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ledger_history_created ON public.ledger_history USING btree (created_at DESC);
+
+
+--
+-- Name: idx_ledger_history_ledger; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ledger_history_ledger ON public.ledger_history USING btree (ledger_name);
 
 
 --
@@ -2602,6 +2720,13 @@ CREATE INDEX idx_org_members_builder_id ON public.organization_members USING btr
 --
 
 CREATE INDEX idx_org_members_organization_id ON public.organization_members USING btree (organization_id);
+
+
+--
+-- Name: idx_org_members_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_org_members_project_id ON public.organization_members USING btree (project_id) WHERE (project_id IS NOT NULL);
 
 
 --
@@ -3123,6 +3248,34 @@ CREATE UNIQUE INDEX uq_invitations_org_email_active ON public.invitations USING 
 
 
 --
+-- Name: uq_invitations_org_email_global; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_invitations_org_email_global ON public.invitations USING btree (organization_id, email) WHERE ((project_id IS NULL) AND (deleted_at IS NULL) AND (accepted_at IS NULL));
+
+
+--
+-- Name: uq_invitations_org_email_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_invitations_org_email_project ON public.invitations USING btree (organization_id, email, project_id) WHERE ((project_id IS NOT NULL) AND (deleted_at IS NULL) AND (accepted_at IS NULL));
+
+
+--
+-- Name: uq_org_members_user_org_global; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_org_members_user_org_global ON public.organization_members USING btree (organization_id, user_id) WHERE (project_id IS NULL);
+
+
+--
+-- Name: uq_org_members_user_org_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_org_members_user_org_project ON public.organization_members USING btree (organization_id, user_id, project_id) WHERE (project_id IS NOT NULL);
+
+
+--
 -- Name: job_common_pkey; Type: INDEX ATTACH; Schema: pgboss; Owner: -
 --
 
@@ -3479,6 +3632,14 @@ ALTER TABLE ONLY public.contractors
 
 
 --
+-- Name: document_analysis_cache document_analysis_cache_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_analysis_cache
+    ADD CONSTRAINT document_analysis_cache_builder_id_fkey FOREIGN KEY (builder_id) REFERENCES public.builders(id) ON DELETE CASCADE;
+
+
+--
 -- Name: document_embeddings document_embeddings_builder_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3607,6 +3768,14 @@ ALTER TABLE ONLY public.invitations
 
 
 --
+-- Name: invitations invitations_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invitations
+    ADD CONSTRAINT invitations_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: invoices invoices_budget_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3732,6 +3901,14 @@ ALTER TABLE ONLY public.organization_members
 
 ALTER TABLE ONLY public.organization_members
     ADD CONSTRAINT organization_members_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: organization_members organization_members_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organization_members
+    ADD CONSTRAINT organization_members_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -4130,5 +4307,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6OYLeRNZ7DtIj8RhMtFzmGs7qGkVivx5O7af076VBlbo1AdLkCgQIHk5lrA2FtB
+\unrestrict bDTWE7BGEE51LfNTOew85n9i7yDKXVdQOd9rY7ZFJKIL8VFUZ7TLy2TwmWU35at
 

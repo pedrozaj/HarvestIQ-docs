@@ -27,14 +27,14 @@ You are implementing Phase 6 Stream A (Dashboard Backend) for HarvestIQ.
 TASK: Create the dashboard controller and routes that aggregate data from all Phase 1-5 tables.
 
 REFERENCE FILES:
-- API contracts: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream A section)
+- API contracts: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream A section)
 
 PATTERN FILES TO FOLLOW:
-- Controller pattern: /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/controllers/project.controller.ts
+- Controller pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/controllers/project.controller.ts
 
 FILES TO CREATE:
-Backend (in /Users/joey/Projects/X1LLC/HarvestIQ-backend/):
+Backend (in /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/):
 - src/controllers/dashboard.controller.ts
 - src/routes/dashboard.routes.ts
 
@@ -73,11 +73,11 @@ You are implementing Phase 6 Stream B (Search & Reports) for HarvestIQ.
 TASK: Create search controller and reports controller with their routes.
 
 REFERENCE FILES:
-- API contracts: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream B section)
+- API contracts: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream B section)
 
 FILES TO CREATE:
-Backend (in /Users/joey/Projects/X1LLC/HarvestIQ-backend/):
+Backend (in /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/):
 - src/controllers/search.controller.ts
 - src/controllers/reports.controller.ts
 - src/routes/search.routes.ts
@@ -136,16 +136,16 @@ You are implementing Phase 6 Stream C (Frontend) for HarvestIQ.
 TASK: Create frontend hooks, components, and pages for dashboard, search, and settings.
 
 REFERENCE FILES:
-- UI wireframes: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/UI.md
-- API contracts: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream C section)
+- UI wireframes: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/UI.md
+- API contracts: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/API.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md (Stream C section)
 
 PATTERN FILES TO FOLLOW:
-- Hook pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/hooks/usePayments.ts
-- Component pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/components/payments/
+- Hook pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/hooks/usePayments.ts
+- Component pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/components/payments/
 
 FILES TO CREATE:
-Frontend (in /Users/joey/Projects/X1LLC/HarvestIQ/):
+Frontend (in /Users/joey/Projects/HarvestIQ/HarvestIQ/):
 
 Hooks:
 - src/hooks/useDashboard.ts
@@ -219,13 +219,13 @@ You are performing integration testing for Phase 6 of HarvestIQ.
 TASK: Test all Phase 6 features and verify they work correctly.
 
 CHECKLIST:
-Read /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md
+Read /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md
 (see "Integration & Testing" section)
 
 TESTS TO PERFORM:
 1. Start both servers:
-   - Backend: cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npm run dev
-   - Frontend: cd /Users/joey/Projects/X1LLC/HarvestIQ && npm run dev
+   - Backend: cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npm run dev
+   - Frontend: cd /Users/joey/Projects/HarvestIQ/HarvestIQ && npm run dev
 
 2. Test Dashboard:
    - Navigate to /dashboard
@@ -275,13 +275,13 @@ You are auditing Phase 6 implementation for HarvestIQ.
 TASK: Verify all Phase 6 deliverables are complete and working.
 
 CHECKLIST:
-Read /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md
+Read /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/06-dashboard-reports/CHECKLIST.md
 (see "Audit Checklist" and "Definition of Done" sections)
 
 VERIFICATION STEPS:
 1. Check TypeScript compilation:
-   - cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npx tsc --noEmit
-   - cd /Users/joey/Projects/X1LLC/HarvestIQ && npx tsc --noEmit
+   - cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npx tsc --noEmit
+   - cd /Users/joey/Projects/HarvestIQ/HarvestIQ && npx tsc --noEmit
 
 2. Check API endpoints:
    - GET /dashboard - Returns aggregated data

@@ -11,7 +11,7 @@
 ## Clone Repositories
 
 ```bash
-cd /Users/joey/Projects/X1LLC
+cd /Users/joey/Projects/HarvestIQ
 
 # Frontend
 git clone git@github.com:pedrozaj/HarvestIQ.git
@@ -170,7 +170,7 @@ curl https://harvestiq-backend-production.up.railway.app
 ## Project Structure
 
 ```
-/Users/joey/Projects/X1LLC/
+/Users/joey/Projects/HarvestIQ/
 ├── HarvestIQ/                  # Frontend (Next.js 15)
 │   ├── src/
 │   │   ├── app/                # App router pages

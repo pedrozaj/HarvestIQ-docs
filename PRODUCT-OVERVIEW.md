@@ -241,6 +241,7 @@ The overview dashboard provides supplementary metrics (accessible via `/dashboar
 - Organization member management
 - Role-based permissions (Admin, Manager, Member, Viewer)
 - Email invitations with secure tokens
+- Per-project access scope: invite a user to a single project instead of the whole organization (member/viewer roles only)
 - Pending invitation tracking
 - Member removal and role changes
 

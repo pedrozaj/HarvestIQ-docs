@@ -27,11 +27,11 @@ You are implementing Phase 5 prerequisites for HarvestIQ.
 TASK: Add Phase 5 constants and types to the backend.
 
 FILES TO MODIFY:
-1. /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/constants/index.ts
-2. /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/types/index.ts
+1. /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/constants/index.ts
+2. /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/types/index.ts
 
 REFERENCE:
-Read /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/SCHEMA.md
+Read /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/SCHEMA.md
 for the exact constants and types to add (see "Constants to Add" and "Types to Add" sections).
 
 PATTERN TO FOLLOW:
@@ -39,7 +39,7 @@ Look at existing constants (DOCUMENT_TYPE, INVOICE_STATUS, etc.) and types (Docu
 in those files for the pattern to follow.
 
 VERIFICATION:
-After adding, run: cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npx tsc --noEmit
+After adding, run: cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npx tsc --noEmit
 to verify no TypeScript errors.
 
 DO NOT create any other files. Only modify the two files listed above.
@@ -64,18 +64,18 @@ TASK: Create database migrations, validation schemas, models, controllers, and r
 - Alert Thresholds (budget alert configuration)
 
 REFERENCE FILES:
-- Schema definitions: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/SCHEMA.md
-- API contracts: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/API.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream A section)
+- Schema definitions: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/SCHEMA.md
+- API contracts: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/API.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream A section)
 
 PATTERN FILES TO FOLLOW:
-- Model pattern: /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/models/invoice.model.ts
-- Schema pattern: /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/schemas/invoice.schema.ts
-- Controller pattern: /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/controllers/invoice.controller.ts
-- Routes pattern: /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/routes/invoice.routes.ts
+- Model pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/models/invoice.model.ts
+- Schema pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/schemas/invoice.schema.ts
+- Controller pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/controllers/invoice.controller.ts
+- Routes pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/routes/invoice.routes.ts
 
 FILES TO CREATE:
-Backend (in /Users/joey/Projects/X1LLC/HarvestIQ-backend/):
+Backend (in /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/):
 - migrations/020_create_task_items.sql
 - migrations/021_create_reminders.sql
 - migrations/022_create_notifications.sql
@@ -132,15 +132,15 @@ You are implementing Phase 5 Stream B (Background Jobs & Email) for HarvestIQ.
 TASK: Set up pg-boss job queue and create job handlers for notifications and email delivery.
 
 REFERENCE FILES:
-- Job definitions: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/JOBS.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream B section)
+- Job definitions: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/JOBS.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream B section)
 
 EXISTING EMAIL SERVICE:
-Check if /Users/joey/Projects/X1LLC/HarvestIQ-backend/src/services/email.service.ts exists.
+Check if /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/src/services/email.service.ts exists.
 If it does, use it. If not, create it using Resend (already configured in .env).
 
 FILES TO CREATE:
-Backend (in /Users/joey/Projects/X1LLC/HarvestIQ-backend/):
+Backend (in /Users/joey/Projects/HarvestIQ/HarvestIQ-backend/):
 - src/jobs/queue.ts - pg-boss instance and startup
 - src/jobs/index.ts - Worker entry point
 - src/jobs/handlers/reminder.job.ts
@@ -183,18 +183,18 @@ You are implementing Phase 5 Stream C (Frontend Components) for HarvestIQ.
 TASK: Create frontend hooks, components, and pages for task items, notifications, reminders, and settings.
 
 REFERENCE FILES:
-- UI wireframes: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/UI.md
-- API contracts: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/API.md
-- Checklist: /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream C section)
+- UI wireframes: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/UI.md
+- API contracts: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/API.md
+- Checklist: /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md (Stream C section)
 
 PATTERN FILES TO FOLLOW:
-- Hook pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/hooks/usePayments.ts
-- Component pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/components/payments/
-- Modal pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/components/payments/InvoiceFormModal.tsx
-- Tab pattern: /Users/joey/Projects/X1LLC/HarvestIQ/src/components/payments/PaymentsTab.tsx
+- Hook pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/hooks/usePayments.ts
+- Component pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/components/payments/
+- Modal pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/components/payments/InvoiceFormModal.tsx
+- Tab pattern: /Users/joey/Projects/HarvestIQ/HarvestIQ/src/components/payments/PaymentsTab.tsx
 
 FILES TO CREATE:
-Frontend (in /Users/joey/Projects/X1LLC/HarvestIQ/):
+Frontend (in /Users/joey/Projects/HarvestIQ/HarvestIQ/):
 - src/hooks/useTaskItems.ts
 - src/hooks/useReminders.ts
 - src/hooks/useNotifications.ts
@@ -250,14 +250,14 @@ You are performing integration testing for Phase 5 of HarvestIQ.
 TASK: Test all Phase 5 features and verify they work correctly.
 
 CHECKLIST:
-Read /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md
+Read /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md
 (see "Integration & Testing" section)
 
 TESTS TO PERFORM:
 1. Start both servers:
-   - Backend: cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npm run dev
-   - Frontend: cd /Users/joey/Projects/X1LLC/HarvestIQ && npm run dev
-   - Jobs: cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npm run jobs
+   - Backend: cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npm run dev
+   - Frontend: cd /Users/joey/Projects/HarvestIQ/HarvestIQ && npm run dev
+   - Jobs: cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npm run jobs
 
 2. Test Task Items:
    - Navigate to /tasks
@@ -310,7 +310,7 @@ You are auditing Phase 5 implementation for HarvestIQ.
 TASK: Verify all Phase 5 deliverables are complete and working.
 
 CHECKLIST:
-Read /Users/joey/Projects/X1LLC/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md
+Read /Users/joey/Projects/HarvestIQ/HarvestIQ-docs/plans/phases/05-tasks-notifications/CHECKLIST.md
 (see "Audit Checklist" and "Definition of Done" sections)
 
 VERIFICATION STEPS:
@@ -319,8 +319,8 @@ VERIFICATION STEPS:
    - Verify migrations 020-025 are present
 
 2. Check TypeScript compilation:
-   - cd /Users/joey/Projects/X1LLC/HarvestIQ-backend && npx tsc --noEmit
-   - cd /Users/joey/Projects/X1LLC/HarvestIQ && npx tsc --noEmit
+   - cd /Users/joey/Projects/HarvestIQ/HarvestIQ-backend && npx tsc --noEmit
+   - cd /Users/joey/Projects/HarvestIQ/HarvestIQ && npx tsc --noEmit
 
 3. Check API endpoints:
    - GET /task-items

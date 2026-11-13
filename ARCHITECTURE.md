@@ -252,11 +252,14 @@ HarvestIQ uses a multi-tenant architecture where each **Builder** (company) has 
 | organization_id | UUID | FK to organizations |
 | user_id | UUID | FK to users |
 | role | VARCHAR(50) | admin, manager, member, viewer |
+| project_id | UUID | FK to projects. NULL = org-wide access; set = access scoped to that one project |
 | invited_at | TIMESTAMPTZ | Invitation timestamp |
 | joined_at | TIMESTAMPTZ | Join timestamp |
 | is_active | BOOLEAN | Membership active status |
 | created_at | TIMESTAMPTZ | Creation timestamp |
 | updated_at | TIMESTAMPTZ | Last update timestamp |
+
+Uniqueness is enforced by two partial indexes: at most one org-wide row per (org, user) and at most one row per (org, user, project) for project-scoped membership.
 
 ### refresh_tokens table
 | Column | Type | Description |
@@ -317,6 +320,7 @@ HarvestIQ uses a multi-tenant architecture where each **Builder** (company) has 
 | organization_id | UUID | FK to organizations |
 | email | VARCHAR(255) | Invited email address |
 | role | VARCHAR(50) | admin, manager, member, viewer |
+| project_id | UUID | FK to projects. NULL = org-wide invite; set = scoped to one project (member/viewer roles only) |
 | token_hash | VARCHAR(255) | SHA-256 hash of invitation token |
 | invited_by | UUID | FK to user who sent invite |
 | message | TEXT | Optional invitation message |
@@ -356,8 +360,30 @@ const items = await budgetItemModel.findByProject(project.builder_id, projectId)
 
 | Function | Purpose |
 |----------|---------|
-| `projectModel.findByIdForUser(projectId, userId)` | Gets project if user is member of its organization |
-| `organizationMemberModel.findMembershipByOrgAndUser(orgId, userId)` | Finds membership without requiring builderId |
+| `projectModel.findByIdForUser(projectId, userId)` | Gets project if user is org-wide member or has scoped access to that specific project |
+| `projectModel.findByUserOrganizations(userId, filters)` | Lists projects across the user's accessible orgs, honoring per-project scope |
+| `organizationMemberModel.findMembershipByOrgAndUser(orgId, userId)` | Finds membership without requiring builderId. Prefers org-wide row over scoped row |
+
+## Project-Scoped Membership
+
+A user's access to an organization can be limited to a single project. This is controlled by `organization_members.project_id`:
+
+- `project_id IS NULL` — org-wide membership: user sees every project in the org
+- `project_id IS NOT NULL` — project-scoped membership: user only sees that one project
+
+Project-scoped invitations must use the `member` or `viewer` role; `admin` and `manager` are always org-wide. The scope is set at invite time (via `POST /organizations/:id/invitations` with a `projectId` field) and carries through to `organization_members` when the invitation is accepted.
+
+The access predicate used by `findByIdForUser` and `findByUserOrganizations`:
+
+```sql
+EXISTS (
+  SELECT 1 FROM organization_members om
+  WHERE om.organization_id = p.organization_id
+    AND om.user_id = $userId
+    AND om.is_active = true
+    AND (om.project_id IS NULL OR om.project_id = p.id)
+)
+```
 
 ### Controllers Using This Pattern
 
